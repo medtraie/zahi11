@@ -1078,6 +1078,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
   const [showAddMaintenanceModal, setShowAddMaintenanceModal] = useState(false);
   const [maintenanceFilter, setMaintenanceFilter] = useState<'all' | 'Programmé' | 'En cours' | 'Terminé'>('all');
   const [maintenanceSearch, setMaintenanceSearch] = useState('');
+  const [maintenanceViewMode, setMaintenanceViewMode] = useState<'table' | 'cards'>('table');
+  const [maintenanceTypeFilter, setMaintenanceTypeFilter] = useState<string>('all');
   const [newMaintenanceForm, setNewMaintenanceForm] = useState<{
     refrigeratorId: string;
     type: 'Préventive' | 'Curative' | 'Recharge Gaz' | 'Remplacement Pièces' | 'Nettoyage & Diagnostic';
@@ -3892,728 +3894,1300 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
 
       {/* SUB-TAB: MAINTENANCE ET ENTRETIEN DU PARC REFRIGERATEURS */}
       {activeSubTab === 'maintenance' && (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 w-full max-w-full">
           
-          {/* Header Bar & Main Action */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <h3 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
-                <Wrench className="h-5 w-5 text-amber-500" />
-                {lang === 'fr' ? 'Gestion de la Maintenance Réfrigérateurs' : 'إدارة صيانة وإصلاح الثلاجات'}
-              </h3>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">
-                {lang === 'fr' ? 'Suivi des révisions, interventions techniques et coûts de réparation du parc' : 'متابعة الصيانة الوقائية والتصحيحية وتكاليف الإصلاح'}
-              </p>
-            </div>
+          {(() => {
+            const totalInterventions = maintenances.length;
+            const inProgressCount = maintenances.filter(m => m.status === 'En cours').length;
+            const scheduledCount = maintenances.filter(m => m.status === 'Programmé').length;
+            const completedCount = maintenances.filter(m => m.status === 'Terminé').length;
+            const totalCostMad = maintenances.reduce((acc, curr) => acc + (Number(curr.cost) || 0), 0);
 
-            <button
-              onClick={() => { setShowAddMaintenanceModal(true); playBip(850, 0.06); }}
-              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-2 shadow transition-all cursor-pointer shrink-0"
-            >
-              <Plus className="h-4 w-4" />
-              {lang === 'fr' ? 'Nouvelle Intervention Maintenance' : 'إضافة عملية صيانة جديدة'}
-            </button>
-          </div>
+            const filteredMaintenances = maintenances.filter(m => {
+              if (maintenanceFilter !== 'all' && m.status !== maintenanceFilter) return false;
+              if (maintenanceTypeFilter !== 'all' && m.type !== maintenanceTypeFilter) return false;
+              if (maintenanceSearch.trim()) {
+                const q = maintenanceSearch.trim().toLowerCase();
+                const match = (m.serialNumber || '').toLowerCase().includes(q) ||
+                              (m.technician || '').toLowerCase().includes(q) ||
+                              (m.description || '').toLowerCase().includes(q) ||
+                              (m.location || '').toLowerCase().includes(q) ||
+                              (m.type || '').toLowerCase().includes(q);
+                if (!match) return false;
+              }
+              return true;
+            });
 
-          {/* KPI Cards Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
-              <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl">
-                <Wrench className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Total Interventions' : 'إجمالي العمليات'}</span>
-                <span className="text-xl font-mono font-black text-slate-800 dark:text-white">{maintenances.length}</span>
-              </div>
-            </div>
+            const isFilterActive = maintenanceFilter !== 'all' || maintenanceTypeFilter !== 'all' || maintenanceSearch.trim() !== '';
 
-            <div className="p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
-              <div className="p-3 bg-amber-500/10 text-amber-600 rounded-xl">
-                <Activity className="h-5 w-5 animate-pulse" />
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Interventions En Cours' : 'صيانة قيد التنفيذ'}</span>
-                <span className="text-xl font-mono font-black text-amber-600 dark:text-amber-400">
-                  {maintenances.filter(m => m.status === 'En cours').length}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
-              <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
-                <CheckCircle2 className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Interventions Terminées' : 'عمليات منتهية'}</span>
-                <span className="text-xl font-mono font-black text-emerald-600 dark:text-emerald-400">
-                  {maintenances.filter(m => m.status === 'Terminé').length}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
-              <div className="p-3 bg-sky-500/10 text-sky-500 rounded-xl">
-                <DollarSign className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Coût Total Maintenance' : 'مجموع التكاليف'}</span>
-                <span className="text-xl font-mono font-black text-sky-600 dark:text-sky-400">
-                  {maintenances.reduce((acc, curr) => acc + curr.cost, 0).toLocaleString()} <span className="text-xs">MAD</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Search and Status Filters */}
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-            <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl">
-              {(['all', 'En cours', 'Programmé', 'Terminé'] as const).map(st => (
-                <button
-                  key={st}
-                  onClick={() => { setMaintenanceFilter(st); playBip(750, 0.04); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    maintenanceFilter === st 
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow' 
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800'
-                  }`}
-                >
-                  {st === 'all' ? (lang === 'fr' ? 'Toutes' : 'الكل') : st}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative flex-1 md:max-w-xs">
-              <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-400" />
-              <input
-                type="text"
-                value={maintenanceSearch}
-                onChange={(e) => setMaintenanceSearch(e.target.value)}
-                placeholder={lang === 'fr' ? 'Rechercher n° série, technicien...' : 'ابحث بالرقم أو الفني...'}
-                className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-850 dark:text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
-          </div>
-
-          {/* Maintenance Table List */}
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="p-3">Réfrigérateur</th>
-                  <th className="p-3">Type Intervention</th>
-                  <th className="p-3">Emplacement / Dépôt</th>
-                  <th className="p-3">Technicien</th>
-                  <th className="p-3">Description & Travaux</th>
-                  <th className="p-3">Coût</th>
-                  <th className="p-3">Statut</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
-                {maintenances
-                  .filter(m => maintenanceFilter === 'all' || m.status === maintenanceFilter)
-                  .filter(m => m.serialNumber.toLowerCase().includes(maintenanceSearch.toLowerCase()) || m.technician.toLowerCase().includes(maintenanceSearch.toLowerCase()) || m.description.toLowerCase().includes(maintenanceSearch.toLowerCase()))
-                  .map(m => (
-                    <tr key={m.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <div className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                            <Snowflake className="h-4 w-4 text-sky-500" />
-                          </div>
-                          <div>
-                            <span className="font-mono font-black text-slate-800 dark:text-white block">{m.serialNumber}</span>
-                            <span className="text-[10px] text-slate-400 font-mono">{m.date}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3 font-semibold text-slate-700 dark:text-slate-200">
-                        {m.type}
-                      </td>
-                      <td className="p-3 text-slate-500 dark:text-slate-400">
-                        {m.location}
-                      </td>
-                      <td className="p-3 font-medium text-slate-700 dark:text-slate-300">
-                        {m.technician}
-                      </td>
-                      <td className="p-3 text-slate-500 dark:text-slate-400 max-w-xs truncate">
-                        {m.description}
-                      </td>
-                      <td className="p-3 font-mono font-bold text-slate-800 dark:text-white">
-                        {m.cost.toLocaleString()} MAD
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase inline-block ${
-                          m.status === 'Terminé'
-                            ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                            : m.status === 'En cours'
-                              ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                              : 'bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400'
-                        }`}>
-                          {m.status}
+            return (
+              <>
+                {/* 1. HEADER BANNER */}
+                <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent dark:from-amber-500/15 dark:via-orange-500/10 p-5 rounded-3xl border border-amber-200/70 dark:border-amber-900/40 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="p-3 bg-gradient-to-tr from-amber-500 to-orange-600 text-slate-950 font-black rounded-2xl shadow-lg shadow-amber-500/20">
+                      <Wrench className="h-6 w-6 text-slate-950" />
+                    </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                        {lang === 'fr' 
+                          ? 'Gestion & Suivi de la Maintenance Technique' 
+                          : 'إدارة ومتابعة الصيانة التقنية للثلاجات'}
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold border border-amber-500/20">
+                          {filteredMaintenances.length} / {totalInterventions}
                         </span>
-                      </td>
-                      <td className="p-3 text-right space-x-1">
-                        {m.status !== 'Terminé' && (
-                          <button
-                            onClick={() => {
-                              setMaintenances(prev => prev.map(item => item.id === m.id ? { ...item, status: 'Terminé' } : item));
-                              setFridges(prev => prev.map(f => f.id === m.refrigeratorId ? { ...f, status: 'service' } : f));
-                              playBip(1100, 0.05);
-                            }}
-                            className="px-2 py-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] rounded-lg transition-all"
-                            title="Valider la fin de maintenance"
-                          >
-                            Valider
-                          </button>
-                        )}
-                        <button
-                          onClick={() => {
-                            setMaintenances(prev => prev.filter(item => item.id !== m.id));
-                            playBip(600, 0.05);
-                          }}
-                          className="p-1 text-rose-400 hover:text-rose-600 transition-colors"
-                          title="Supprimer la fiche"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Modal Overlay: Ajouter Maintenance */}
-          <AnimatePresence>
-            {showAddMaintenanceModal && (
-              <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
-                >
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                    <h3 className="font-black text-slate-800 dark:text-white flex items-center gap-2 text-base">
-                      <Wrench className="h-5 w-5 text-amber-500" />
-                      {lang === 'fr' ? 'Programmer une Intervention' : 'إضافة عملية صيانة جديدة'}
-                    </h3>
-                    <button 
-                      onClick={() => setShowAddMaintenanceModal(false)}
-                      className="p-1 text-slate-400 hover:text-slate-600"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                        {lang === 'fr'
+                          ? 'Suivi des révisions, interventions curatives/préventives et maîtrise des coûts du parc frigorifique.'
+                          : 'متابعة الفحوصات الدورية، التدخلات التصحيحية والوقائية وضبط تكاليف صيانة أسطول التبريد.'}
+                      </p>
+                    </div>
                   </div>
 
-                  <form 
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const selectedFridge = fridges.find(f => f.id === newMaintenanceForm.refrigeratorId);
-                      const newRec: MaintenanceRecord = {
-                        id: `MNT-2026-${String(maintenances.length + 1).padStart(3, '0')}`,
-                        refrigeratorId: newMaintenanceForm.refrigeratorId,
-                        serialNumber: selectedFridge?.serialNumber || 'ZAHI-REF',
-                        date: new Date().toISOString().split('T')[0],
-                        type: newMaintenanceForm.type,
-                        technician: newMaintenanceForm.technician || 'Technicien Zahi',
-                        description: newMaintenanceForm.description || 'Intervention technique de révision',
-                        cost: Number(newMaintenanceForm.cost) || 0,
-                        status: newMaintenanceForm.status,
-                        nextDueDate: newMaintenanceForm.nextDueDate,
-                        location: selectedFridge ? (selectedFridge.status === 'service' ? (selectedFridge.client || selectedFridge.depot) : `Dépôt ${selectedFridge.depot}`) : 'Casablanca'
-                      };
-
-                      setMaintenances(prev => [newRec, ...prev]);
-
-                      if (newMaintenanceForm.status === 'En cours') {
-                        setFridges(prev => prev.map(f => f.id === newMaintenanceForm.refrigeratorId ? { ...f, status: 'maintenance' } : f));
-                      }
-
-                      setShowAddMaintenanceModal(false);
-                      playBip(950, 0.08);
-                    }}
-                    className="space-y-4 text-xs"
-                  >
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Sélectionner Réfrigérateur</label>
-                      <select
-                        value={newMaintenanceForm.refrigeratorId}
-                        onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, refrigeratorId: e.target.value }))}
-                        className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white"
+                  <div className="flex flex-wrap items-center gap-2">
+                    {isFilterActive && (
+                      <button
+                        onClick={() => {
+                          setMaintenanceFilter('all');
+                          setMaintenanceTypeFilter('all');
+                          setMaintenanceSearch('');
+                          playBip(600, 0.05);
+                        }}
+                        className="px-3 py-2 text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-bold uppercase flex items-center gap-1.5"
                       >
-                        {fridges.map(f => (
-                          <option key={f.id} value={f.id}>
-                            {f.serialNumber} - {f.client || `Dépôt ${f.depot}`} ({f.status})
-                          </option>
-                        ))}
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>{lang === 'fr' ? 'Réinitialiser' : 'إعادة تعيين'}</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => { setShowAddMaintenanceModal(true); playBip(850, 0.06); }}
+                      className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all cursor-pointer shrink-0 uppercase tracking-wider"
+                    >
+                      <Plus className="h-4 w-4 stroke-[3]" />
+                      <span>{lang === 'fr' ? 'Nouvelle Intervention' : 'إضافة عملية صيانة'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. KPI METRICS RIBBON */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+                  {/* Total */}
+                  <div
+                    onClick={() => { setMaintenanceFilter('all'); playBip(700, 0.04); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      maintenanceFilter === 'all'
+                        ? 'bg-amber-500/10 border-amber-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-amber-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Total Interventions' : 'إجمالي العمليات'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <Wrench className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-slate-800 dark:text-white font-mono tracking-tight">
+                      {totalInterventions}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Toutes catégories' : 'كافة السجلات المسجلة'}
+                    </div>
+                  </div>
+
+                  {/* En cours */}
+                  <div
+                    onClick={() => { setMaintenanceFilter(maintenanceFilter === 'En cours' ? 'all' : 'En cours'); playBip(700, 0.04); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      maintenanceFilter === 'En cours'
+                        ? 'bg-amber-500/15 border-amber-500/50 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-amber-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'En Cours d\'Atelier' : 'قيد الصيانة والتصليح'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <Activity className="h-4 w-4 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
+                      {inProgressCount}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Interventions actives' : 'تدخلات نشطة حالياً'}
+                    </div>
+                  </div>
+
+                  {/* Programmé */}
+                  <div
+                    onClick={() => { setMaintenanceFilter(maintenanceFilter === 'Programmé' ? 'all' : 'Programmé'); playBip(700, 0.04); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      maintenanceFilter === 'Programmé'
+                        ? 'bg-sky-500/10 border-sky-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-sky-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Programmées' : 'عمليات مبرمجة'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-sky-600 dark:text-sky-400 font-mono tracking-tight">
+                      {scheduledCount}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'À planifier / À venir' : 'مجدولة للمستقبل'}
+                    </div>
+                  </div>
+
+                  {/* Terminé */}
+                  <div
+                    onClick={() => { setMaintenanceFilter(maintenanceFilter === 'Terminé' ? 'all' : 'Terminé'); playBip(700, 0.04); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      maintenanceFilter === 'Terminé'
+                        ? 'bg-emerald-500/10 border-emerald-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Terminées & Validées' : 'عمليات منتهية ومؤكدة'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+                      {completedCount}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Appareils rétablis' : 'أجهزة تم إصلاحها'}
+                    </div>
+                  </div>
+
+                  {/* Coût Total */}
+                  <div className="p-4 rounded-2xl border bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 transition-all">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Coût Total' : 'إجمالي التكاليف'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                        <DollarSign className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xl font-black text-slate-800 dark:text-white font-mono tracking-tight truncate">
+                      {totalCostMad.toLocaleString()} <span className="text-xs text-slate-400 font-sans font-bold">MAD</span>
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Factures et pièces' : 'قطع الغيار والخدمات'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. CONTROLS & FILTER TOOLBAR */}
+                <div className="bg-white dark:bg-slate-850 p-4 sm:p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+                  <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                    
+                    {/* Left: Status Filter Pills */}
+                    <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/70 dark:border-slate-800">
+                      {[
+                        { id: 'all', labelFr: 'Toutes', labelAr: 'الكل', count: totalInterventions },
+                        { id: 'En cours', labelFr: 'En cours', labelAr: 'قيد التنفيذ', count: inProgressCount },
+                        { id: 'Programmé', labelFr: 'Programmées', labelAr: 'مبرمجة', count: scheduledCount },
+                        { id: 'Terminé', labelFr: 'Terminées', labelAr: 'منتهية', count: completedCount }
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => { setMaintenanceFilter(tab.id as any); playBip(750, 0.04); }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                            maintenanceFilter === tab.id
+                              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                              : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                          }`}
+                        >
+                          <span>{lang === 'fr' ? tab.labelFr : tab.labelAr}</span>
+                          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${
+                            maintenanceFilter === tab.id
+                              ? 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-black'
+                              : 'bg-slate-200/60 dark:bg-slate-800/80 text-slate-500'
+                          }`}>
+                            {tab.count}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Middle: Type filter dropdown */}
+                    <div className="flex-1 max-w-xs">
+                      <select
+                        value={maintenanceTypeFilter}
+                        onChange={(e) => { setMaintenanceTypeFilter(e.target.value); playBip(700, 0.04); }}
+                        className="w-full text-xs px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700/80 rounded-xl focus:border-amber-500 outline-none cursor-pointer text-slate-800 dark:text-slate-100 font-bold shadow-sm"
+                      >
+                        <option value="all">{lang === 'fr' ? 'Tous les types d\'intervention' : 'كافة أنواع التدخلات'}</option>
+                        <option value="Préventive">{lang === 'fr' ? 'Préventive' : 'وقائية'}</option>
+                        <option value="Curative">{lang === 'fr' ? 'Curative' : 'تصحيحية / إصلاح'}</option>
+                        <option value="Recharge Gaz">{lang === 'fr' ? 'Recharge Gaz Fréon' : 'شحن غاز التبريد'}</option>
+                        <option value="Remplacement Pièces">{lang === 'fr' ? 'Remplacement Pièces' : 'تبديل قطع الغيار'}</option>
+                        <option value="Nettoyage & Diagnostic">{lang === 'fr' ? 'Nettoyage & Diagnostic' : 'تنظيف وفحص شامل'}</option>
                       </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Type d'Intervention</label>
-                        <select
-                          value={newMaintenanceForm.type}
-                          onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, type: e.target.value as any }))}
-                          className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white"
-                        >
-                          <option value="Préventive">Préventive</option>
-                          <option value="Curative">Curative</option>
-                          <option value="Recharge Gaz">Recharge Gaz Fréon</option>
-                          <option value="Remplacement Pièces">Remplacement Pièces</option>
-                          <option value="Nettoyage & Diagnostic">Nettoyage & Diagnostic</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Statut Initial</label>
-                        <select
-                          value={newMaintenanceForm.status}
-                          onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, status: e.target.value as any }))}
-                          className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white"
-                        >
-                          <option value="En cours">En cours</option>
-                          <option value="Programmé">Programmé</option>
-                          <option value="Terminé">Terminé</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nom du Technicien</label>
+                    {/* Right: Search input & View switcher */}
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1 sm:w-64">
+                        <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-400" />
                         <input
                           type="text"
-                          required
-                          placeholder="Kamal Mansouri"
-                          value={newMaintenanceForm.technician}
-                          onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, technician: e.target.value }))}
-                          className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white"
+                          value={maintenanceSearch}
+                          onChange={(e) => setMaintenanceSearch(e.target.value)}
+                          placeholder={lang === 'fr' ? 'Rechercher S/N, technicien...' : 'ابحث برقم التسلسل، الفني...'}
+                          className="w-full pl-9 pr-8 py-2 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:border-amber-500 font-bold shadow-sm"
                         />
+                        {maintenanceSearch && (
+                          <button
+                            onClick={() => setMaintenanceSearch('')}
+                            className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
 
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Coût Estimé (MAD)</label>
-                        <input
-                          type="number"
-                          required
-                          value={newMaintenanceForm.cost}
-                          onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, cost: Number(e.target.value) }))}
-                          className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white font-mono"
-                        />
+                      {/* View switcher */}
+                      <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => { setMaintenanceViewMode('table'); playBip(600, 0.04); }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            maintenanceViewMode === 'table'
+                              ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                              : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                          }`}
+                        >
+                          <List className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">{lang === 'fr' ? 'Tableau' : 'جدول'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setMaintenanceViewMode('cards'); playBip(600, 0.04); }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            maintenanceViewMode === 'cards'
+                              ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                              : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                          }`}
+                        >
+                          <LayoutGrid className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">{lang === 'fr' ? 'Cartes' : 'بطاقات'}</span>
+                        </button>
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Description & Travaux Effectués</label>
-                      <textarea
-                        rows={3}
-                        required
-                        placeholder="Précisez les pièces remplacées, pressions de gaz, etc..."
-                        value={newMaintenanceForm.description}
-                        onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, description: e.target.value }))}
-                        className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white"
-                      />
-                    </div>
+                  </div>
+                </div>
 
-                    <div className="pt-2 flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowAddMaintenanceModal(false)}
-                        className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-500"
-                      >
-                        Annuler
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow"
-                      >
-                        Enregistrer L'Intervention
-                      </button>
+                {/* 4. MAINTENANCE DISPLAY (Table vs Cards) */}
+                <AnimatePresence mode="popLayout">
+                  {filteredMaintenances.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-white dark:bg-slate-850 p-12 rounded-3xl border border-slate-200/80 dark:border-slate-800 text-center space-y-3"
+                    >
+                      <Wrench className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto animate-pulse" />
+                      <h4 className="font-black text-slate-700 dark:text-slate-200 text-sm uppercase">
+                        {lang === 'fr' ? 'Aucune intervention correspondante trouvée' : 'لم يتم العثور على أي عمليات صيانة مطابقة'}
+                      </h4>
+                      <p className="text-xs text-slate-400 max-w-md mx-auto">
+                        {lang === 'fr'
+                          ? 'Modifiez vos critères de recherche ou réinitialisez les filtres pour afficher l\'ensemble des interventions.'
+                          : 'يرجى تعديل معايير البحث أو إلغاء تفعيل الفلاتر لعرض كافة عمليات الصيانة.'}
+                      </p>
+                      {isFilterActive && (
+                        <button
+                          onClick={() => {
+                            setMaintenanceFilter('all');
+                            setMaintenanceTypeFilter('all');
+                            setMaintenanceSearch('');
+                            playBip(600, 0.05);
+                          }}
+                          className="mt-2 px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs uppercase"
+                        >
+                          {lang === 'fr' ? 'Réinitialiser Tous les Filtres' : 'إعادة ضبط كافة الفلاتر'}
+                        </button>
+                      )}
+                    </motion.div>
+                  ) : maintenanceViewMode === 'table' ? (
+
+                    /* ===== TABLE VIEW ===== */
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="bg-white dark:bg-slate-850 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden"
+                    >
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200/80 dark:border-slate-800 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                              <th className="p-3.5">{lang === 'fr' ? 'Réfrigérateur' : 'الثلاجة (S/N)'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Type Intervention' : 'نوع التدخل'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Emplacement / Dépôt' : 'الموقع / المستودع'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Technicien' : 'الفني المسؤول'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Description & Travaux' : 'تفاصيل العمل'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Coût (MAD)' : 'التكلفة'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Statut' : 'الحالة'}</th>
+                              <th className="p-3.5 text-right">{lang === 'fr' ? 'Actions' : 'إجراءات'}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                            {filteredMaintenances.map(m => (
+                              <tr key={m.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                <td className="p-3.5 whitespace-nowrap">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl">
+                                      <Snowflake className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                      <span className="font-mono font-black text-slate-900 dark:text-white block text-xs">
+                                        {m.serialNumber}
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 font-mono block">
+                                        {m.date}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td className="p-3.5 whitespace-nowrap">
+                                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase inline-block ${
+                                    m.type === 'Préventive' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20' :
+                                    m.type === 'Curative' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20' :
+                                    m.type === 'Recharge Gaz' ? 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/20' :
+                                    'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                                  }`}>
+                                    {m.type}
+                                  </span>
+                                </td>
+
+                                <td className="p-3.5 text-slate-600 dark:text-slate-300 font-bold whitespace-nowrap">
+                                  {m.location}
+                                </td>
+
+                                <td className="p-3.5 text-slate-800 dark:text-slate-200 font-bold whitespace-nowrap">
+                                  {m.technician}
+                                </td>
+
+                                <td className="p-3.5 text-slate-500 dark:text-slate-400 max-w-xs truncate font-normal">
+                                  {m.description}
+                                </td>
+
+                                <td className="p-3.5 font-mono font-black text-slate-900 dark:text-white whitespace-nowrap">
+                                  {m.cost.toLocaleString()} <span className="text-[10px] text-slate-400 font-normal">MAD</span>
+                                </td>
+
+                                <td className="p-3.5 whitespace-nowrap">
+                                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase inline-block ${
+                                    m.status === 'Terminé'
+                                      ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                                      : m.status === 'En cours'
+                                        ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 animate-pulse'
+                                        : 'bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20'
+                                  }`}>
+                                    {m.status}
+                                  </span>
+                                </td>
+
+                                <td className="p-3.5 text-right whitespace-nowrap space-x-1.5">
+                                  {m.status !== 'Terminé' && (
+                                    <button
+                                      onClick={() => {
+                                        setMaintenances(prev => prev.map(item => item.id === m.id ? { ...item, status: 'Terminé' } : item));
+                                        setFridges(prev => prev.map(f => f.id === m.refrigeratorId ? { ...f, status: 'service' } : f));
+                                        playBip(1100, 0.05);
+                                      }}
+                                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] rounded-lg transition-all shadow-sm cursor-pointer uppercase"
+                                      title={lang === 'fr' ? 'Valider la fin de maintenance' : 'تأكيد انتهاء الصيانة'}
+                                    >
+                                      {lang === 'fr' ? 'Valider Fin' : 'تأكيد'}
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => {
+                                      setMaintenances(prev => prev.filter(item => item.id !== m.id));
+                                      playBip(600, 0.05);
+                                    }}
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                                    title={lang === 'fr' ? 'Supprimer la fiche' : 'حذف السجل'}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </motion.div>
+                  ) : (
+
+                    /* ===== CARDS VIEW ===== */
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
+                      {filteredMaintenances.map((m, index) => (
+                        <motion.div
+                          key={m.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: Math.min(index * 0.02, 0.3) }}
+                          className="bg-white dark:bg-slate-850 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-amber-500/30 transition-all flex flex-col justify-between space-y-4 group"
+                        >
+                          {/* Card Top */}
+                          <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl">
+                                <Snowflake className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <span className="font-mono font-black text-slate-900 dark:text-white text-sm block">
+                                  {m.serialNumber}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono block">
+                                  {m.date}
+                                </span>
+                              </div>
+                            </div>
+
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                              m.status === 'Terminé'
+                                ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                                : m.status === 'En cours'
+                                  ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 animate-pulse'
+                                  : 'bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20'
+                            }`}>
+                              {m.status}
+                            </span>
+                          </div>
+
+                          {/* Card Body */}
+                          <div className="space-y-2.5 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">
+                                {lang === 'fr' ? 'Type d\'intervention :' : 'النوع :'}
+                              </span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">
+                                {m.type}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">
+                                {lang === 'fr' ? 'Emplacement :' : 'الموقع :'}
+                              </span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">
+                                {m.location}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">
+                                {lang === 'fr' ? 'Technicien :' : 'الفني :'}
+                              </span>
+                              <span className="font-bold text-slate-800 dark:text-white">
+                                {m.technician}
+                              </span>
+                            </div>
+
+                            <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-150 dark:border-slate-800/80 text-[11px] text-slate-600 dark:text-slate-300">
+                              {m.description}
+                            </div>
+                          </div>
+
+                          {/* Card Bottom: Cost & Actions */}
+                          <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <div>
+                              <span className="text-[9px] uppercase font-bold text-slate-400 block">
+                                {lang === 'fr' ? 'Coût Intervention' : 'التكلفة'}
+                              </span>
+                              <span className="font-mono font-black text-slate-900 dark:text-white text-sm">
+                                {m.cost.toLocaleString()} MAD
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {m.status !== 'Terminé' && (
+                                <button
+                                  onClick={() => {
+                                    setMaintenances(prev => prev.map(item => item.id === m.id ? { ...item, status: 'Terminé' } : item));
+                                    setFridges(prev => prev.map(f => f.id === m.refrigeratorId ? { ...f, status: 'service' } : f));
+                                    playBip(1100, 0.05);
+                                  }}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] rounded-xl transition-all shadow-sm cursor-pointer uppercase"
+                                >
+                                  {lang === 'fr' ? 'Valider Fin' : 'تأكيد'}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setMaintenances(prev => prev.filter(item => item.id !== m.id));
+                                  playBip(600, 0.05);
+                                }}
+                                className="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
-                  </form>
-                </motion.div>
-              </div>
-            )}
-          </AnimatePresence>
+                  )}
+                </AnimatePresence>
+
+                {/* 5. MODAL: AJOUTER INTERVENTION */}
+                <AnimatePresence>
+                  {showAddMaintenanceModal && (
+                    <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
+                      >
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                          <h3 className="font-black text-slate-800 dark:text-white flex items-center gap-2 text-base">
+                            <Wrench className="h-5 w-5 text-amber-500" />
+                            {lang === 'fr' ? 'Programmer une Intervention Maintenance' : 'إضافة وتوثيق عملية صيانة جديدة'}
+                          </h3>
+                          <button 
+                            onClick={() => setShowAddMaintenanceModal(false)}
+                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+
+                        <form 
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            const selectedFridge = fridges.find(f => f.id === newMaintenanceForm.refrigeratorId);
+                            const newRec: MaintenanceRecord = {
+                              id: `MNT-2026-${String(maintenances.length + 1).padStart(3, '0')}`,
+                              refrigeratorId: newMaintenanceForm.refrigeratorId,
+                              serialNumber: selectedFridge?.serialNumber || 'ZAHI-REF',
+                              date: new Date().toISOString().split('T')[0],
+                              type: newMaintenanceForm.type,
+                              technician: newMaintenanceForm.technician || 'Technicien Zahi',
+                              description: newMaintenanceForm.description || 'Intervention technique de révision',
+                              cost: Number(newMaintenanceForm.cost) || 0,
+                              status: newMaintenanceForm.status,
+                              nextDueDate: newMaintenanceForm.nextDueDate,
+                              location: selectedFridge ? (selectedFridge.status === 'service' ? (selectedFridge.client || selectedFridge.depot) : `Dépôt ${selectedFridge.depot}`) : 'Casablanca'
+                            };
+
+                            setMaintenances(prev => [newRec, ...prev]);
+
+                            if (newMaintenanceForm.status === 'En cours') {
+                              setFridges(prev => prev.map(f => f.id === newMaintenanceForm.refrigeratorId ? { ...f, status: 'maintenance' } : f));
+                            }
+
+                            setShowAddMaintenanceModal(false);
+                            playBip(950, 0.08);
+                          }}
+                          className="space-y-4 text-xs"
+                        >
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                              {lang === 'fr' ? 'Sélectionner le Réfrigérateur' : 'اختر الثلاجة المعنية'}
+                            </label>
+                            <select
+                              value={newMaintenanceForm.refrigeratorId}
+                              onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, refrigeratorId: e.target.value }))}
+                              className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white font-bold"
+                            >
+                              {fridges.map(f => (
+                                <option key={f.id} value={f.id}>
+                                  {f.serialNumber} — {f.client || `Dépôt ${f.depot}`} ({f.status})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                                {lang === 'fr' ? 'Type d\'Intervention' : 'نوع التدخل'}
+                              </label>
+                              <select
+                                value={newMaintenanceForm.type}
+                                onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, type: e.target.value as any }))}
+                                className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white font-bold"
+                              >
+                                <option value="Préventive">{lang === 'fr' ? 'Préventive' : 'وقائية'}</option>
+                                <option value="Curative">{lang === 'fr' ? 'Curative' : 'تصحيحية / إصلاح'}</option>
+                                <option value="Recharge Gaz">{lang === 'fr' ? 'Recharge Gaz Fréon' : 'شحن غاز التبريد'}</option>
+                                <option value="Remplacement Pièces">{lang === 'fr' ? 'Remplacement Pièces' : 'تبديل قطع الغيار'}</option>
+                                <option value="Nettoyage & Diagnostic">{lang === 'fr' ? 'Nettoyage & Diagnostic' : 'تنظيف وفحص شامل'}</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                                {lang === 'fr' ? 'Statut Initial' : 'الحالة الأولية'}
+                              </label>
+                              <select
+                                value={newMaintenanceForm.status}
+                                onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, status: e.target.value as any }))}
+                                className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white font-bold"
+                              >
+                                <option value="En cours">{lang === 'fr' ? 'En cours (Atelier)' : 'قيد الصيانة'}</option>
+                                <option value="Programmé">{lang === 'fr' ? 'Programmé' : 'مبرمجة'}</option>
+                                <option value="Terminé">{lang === 'fr' ? 'Terminé' : 'منتهية'}</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                                {lang === 'fr' ? 'Nom du Technicien' : 'اسم الفني المسؤول'}
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="Kamal Mansouri"
+                                value={newMaintenanceForm.technician}
+                                onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, technician: e.target.value }))}
+                                className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white font-bold"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                                {lang === 'fr' ? 'Coût Estimé (MAD)' : 'التكلفة المقدرة (درهم)'}
+                              </label>
+                              <input
+                                type="number"
+                                required
+                                value={newMaintenanceForm.cost}
+                                onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, cost: Number(e.target.value) }))}
+                                className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white font-mono font-bold"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                              {lang === 'fr' ? 'Description & Travaux Effectués' : 'وصف التدخل والأعمال المنجزة'}
+                            </label>
+                            <textarea
+                              rows={3}
+                              required
+                              placeholder={lang === 'fr' ? "Précisez les pièces remplacées, pressions de gaz..." : "اذكر القطع المستبدلة، ضغط الغاز..."}
+                              value={newMaintenanceForm.description}
+                              onChange={(e) => setNewMaintenanceForm(prev => ({ ...prev, description: e.target.value }))}
+                              className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 dark:text-white resize-none font-medium"
+                            />
+                          </div>
+
+                          <div className="pt-2 flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowAddMaintenanceModal(false)}
+                              className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors uppercase text-xs"
+                            >
+                              {lang === 'fr' ? 'Annuler' : 'إلغاء'}
+                            </button>
+                            <button
+                              type="submit"
+                              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow-md uppercase text-xs cursor-pointer"
+                            >
+                              {lang === 'fr' ? 'Enregistrer L\'Intervention' : 'حفظ عملية الصيانة'}
+                            </button>
+                          </div>
+                        </form>
+                      </motion.div>
+                    </div>
+                  )}
+                </AnimatePresence>
+              </>
+            );
+          })()}
 
         </div>
       )}
 
       {/* SUB-TAB: GEOLOCALISATION GPS SUR CARTE DU MAROC */}
       {activeSubTab === 'geoloc' && (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 w-full max-w-full">
           
-          {/* Header Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <h3 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-emerald-500" />
-                {lang === 'fr' ? 'Géolocalisation Cartographique du Parc' : 'التتبع الجغرافي لشبكة الثلاجات بالمغرب'}
-              </h3>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">
-                {lang === 'fr' ? 'Localisation GPS en temps réel de chaque réfrigérateur sur la carte du Maroc' : 'مواقع الثلاجات بالنقاط الجغرافية عبر مختلف المدن والفروع'}
-              </p>
-            </div>
+          {(() => {
+            const totalGeolocated = fridges.length;
+            const inServiceCount = fridges.filter(f => f.status === 'service').length;
+            const inStockCount = fridges.filter(f => f.status === 'stock').length;
+            const inMaintenanceCount = fridges.filter(f => f.status === 'maintenance').length;
+            const alertCount = fridges.filter(f => f.isLocationAlert).length;
+            const citiesCovered = Array.from(new Set(fridges.map(f => f.depot))).length;
 
-            <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-              <span>{lang === 'fr' ? '100% Signal GPS Actif' : 'إشارة GPS متصلة'}</span>
-            </div>
-          </div>
+            const isFilterActive = geolocSelectedCity !== 'all' || geolocFilterStatus !== 'all' || geolocSearchTerm.trim() !== '';
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
-              <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
-                <Globe className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Appareils Géolocalisés' : 'الأجهزة المتبعة'}</span>
-                <span className="text-xl font-mono font-black text-slate-800 dark:text-white">{fridges.length}</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
-              <div className="p-3 bg-sky-500/10 text-sky-500 rounded-xl">
-                <Building2 className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Villes Couvertes' : 'المدن المغطاة'}</span>
-                <span className="text-xl font-mono font-black text-sky-600 dark:text-sky-400">
-                  {Array.from(new Set(fridges.map(f => f.depot))).length}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
-              <div className="p-3 bg-green-500/10 text-green-500 rounded-xl">
-                <CheckCircle2 className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'En Service Points de Vente' : 'في النقط التجارية'}</span>
-                <span className="text-xl font-mono font-black text-green-600 dark:text-green-400">
-                  {fridges.filter(f => f.status === 'service').length}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
-              <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl">
-                <Navigation className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Couverture Nationale' : 'النطاق الوطني'}</span>
-                <span className="text-xl font-mono font-black text-amber-600 dark:text-amber-400">100% Maroc</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Filter and Search Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Filtrer par Ville / Dépôt</label>
-              <select
-                value={geolocSelectedCity}
-                onChange={(e) => { setGeolocSelectedCity(e.target.value); playBip(700, 0.04); }}
-                className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-850 dark:text-white"
-              >
-                <option value="all">Toutes les villes & dépôts régionaix</option>
-                {Object.keys(MOROCCO_CITY_COORDS).map(city => (
-                  <option key={city} value={city}>
-                    {city} ({fridges.filter(f => f.depot === city).length} réfrigérateurs)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Statut Réfrigérateur</label>
-              <select
-                value={geolocFilterStatus}
-                onChange={(e) => { setGeolocFilterStatus(e.target.value as any); playBip(700, 0.04); }}
-                className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-850 dark:text-white"
-              >
-                <option value="all">Tous les statuts</option>
-                <option value="service">En Service (Chez le Client)</option>
-                <option value="stock">En Stock (Dépôt Régional)</option>
-                <option value="maintenance">En Maintenance (Atelier)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Recherche Appareil</label>
-              <div className="relative">
-                <Search className="h-4 w-4 absolute left-3 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  value={geolocSearchTerm}
-                  onChange={(e) => setGeolocSearchTerm(e.target.value)}
-                  placeholder="N° série, client, adresse..."
-                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-slate-50 dark:bg-slate-850 dark:text-white"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive Morocco Map Canvas Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Left 2 Cols: High-Tech OpenStreetMap Interactive Leaflet Map */}
-            <div className="lg:col-span-2 min-h-[500px]">
-              <OpenStreetMapGeoloc 
-                fridges={fridges}
-                selectedCity={geolocSelectedCity}
-                filterStatus={geolocFilterStatus}
-                searchTerm={geolocSearchTerm}
-                selectedFridgeId={geolocSelectedFridgeId}
-                onSelectFridge={(id) => {
-                  setGeolocSelectedFridgeId(id);
-                  playBip(800, 0.05);
-                }}
-                lang={lang}
-                moroccoCityCoords={MOROCCO_CITY_COORDS}
-              />
-            </div>
-
-            {/* Right 1 Col: Selected Fridge GPS Details Card */}
-            <div className="space-y-4">
-              {(() => {
-                const selectedFridge = fridges.find(f => f.id === geolocSelectedFridgeId);
-
-                if (!selectedFridge) {
-                  return (
-                    <div className="bg-slate-50 dark:bg-slate-850 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 space-y-4 text-center">
-                      <div className="p-4 bg-sky-500/10 text-sky-500 rounded-2xl w-14 h-14 mx-auto flex items-center justify-center">
-                        <MapPin className="h-7 w-7 animate-bounce" />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="font-bold text-slate-800 dark:text-white text-sm">
-                          {lang === 'fr' ? 'Sélectionnez un appareil' : 'اختر ثلاجة من الخريطة'}
-                        </h4>
-                        <p className="text-xs text-slate-400">
-                          {lang === 'fr' 
-                            ? 'Cliquez sur n\'importe quelle ثلاجة sur la carte pour voir sa position GPS, son statut et ses détails en temps réel.'
-                            : 'انقر على أي ثلاجة في الخريطة لرؤية موقعها الدقيق وتفاصيلها المباشرة.'}
-                        </p>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2 text-left text-xs">
-                        <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                          <span className="text-[10px] text-slate-400 font-bold block uppercase">Total Géolocalisés</span>
-                          <span className="font-mono font-black text-sky-600 dark:text-sky-400 text-base">{fridges.length}</span>
-                        </div>
-                        <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                          <span className="text-[10px] text-slate-400 font-bold block uppercase">Villes Couvertes</span>
-                          <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-base">
-                            {new Set(fridges.map(f => f.depot)).size}
-                          </span>
-                        </div>
-                      </div>
+            return (
+              <>
+                {/* 1. HEADER BANNER */}
+                <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent dark:from-emerald-500/15 dark:via-teal-500/10 p-5 rounded-3xl border border-emerald-200/70 dark:border-emerald-900/40 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="p-3 bg-gradient-to-tr from-emerald-500 to-teal-600 text-white rounded-2xl shadow-lg shadow-emerald-500/20">
+                      <Globe className="h-6 w-6" />
                     </div>
-                  );
-                }
+                    <div>
+                      <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                        {lang === 'fr' 
+                          ? 'Supervision Cartographique & Télémétrie GPS' 
+                          : 'المراقبة الجغرافية والتتبع المباشر لأسطول الثلاجات'}
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/20">
+                          {totalGeolocated} {lang === 'fr' ? 'Appareils' : 'ثلاجة'}
+                        </span>
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                        {lang === 'fr'
+                          ? 'Localisation GPS en temps réel sur carte Leaflet interactive, contrôle de périmètre et couverture nationale.'
+                          : 'تحديد المواقع المباشر، خريطة تفاعلية للمملكة، رصد الحركة خارج النطاق وتتبع انتشار الأجهزة في نقاط البيع.'}
+                      </p>
+                    </div>
+                  </div>
 
-                const cityInfo = MOROCCO_CITY_COORDS[selectedFridge.depot] || MOROCCO_CITY_COORDS['Casablanca'];
-                const distanceKm = (cityInfo.lat && cityInfo.lng) ? Math.round(Math.hypot((cityInfo.lat - 33.5731) * 111, (cityInfo.lng - (-7.5898)) * 111)) : 0;
-
-                return (
-                  <div className="bg-slate-50 dark:bg-slate-850 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 space-y-4 relative animate-in fade-in">
-                    {/* Header with Hide button */}
-                    <div className="flex items-start justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-3 rounded-2xl flex items-center justify-center ${selectedFridge.isLocationAlert ? 'bg-rose-500/20 text-rose-500 animate-pulse' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                          <MapPin className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <h4 className="font-mono font-black text-slate-800 dark:text-white text-sm">{selectedFridge.serialNumber}</h4>
-                            {selectedFridge.isLocationAlert && (
-                              <span className="px-1.5 py-0.5 bg-rose-600 text-white text-[9px] font-black rounded uppercase animate-bounce">
-                                ALERTE GPS
-                              </span>
-                            )}
-                          </div>
-                          <span className="px-2 py-0.5 bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 text-[10px] font-bold rounded-full uppercase inline-block mt-0.5">
-                            Catégorie {selectedFridge.type === 'chest' || selectedFridge.type === 'AP' ? 'AP (Coffre)' : 'AG (Armoire)'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Close / Hide details card button */}
-                      <button
-                        type="button"
-                        onClick={() => setGeolocSelectedFridgeId(null)}
-                        className="px-2.5 py-1 bg-slate-200 hover:bg-rose-500 hover:text-white dark:bg-slate-800 dark:hover:bg-rose-600 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
-                        title={lang === 'fr' ? 'Masquer cette fiche' : 'إخفاء'}
-                      >
-                        <EyeOff className="h-3.5 w-3.5" />
-                        <span>{lang === 'fr' ? 'Masquer' : 'إخفاء'}</span>
-                      </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Live GPS Telemetry Status */}
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3.5 py-2 rounded-xl border border-emerald-500/20 shadow-sm">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                      <span>{lang === 'fr' ? '100% Signal GPS Actif & Connecté' : 'إشارة GPS متصلة ومباشرة'}</span>
                     </div>
 
-                    {/* GPS Movement Alert Action Box */}
-                    {selectedFridge.isLocationAlert ? (
-                      <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl space-y-2">
-                        <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs">
-                          <BellRing className="h-4 w-4 animate-bounce shrink-0" />
-                          <span>{selectedFridge.alertReason || 'Changement de position GPS détecté !'}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                          {lang === 'fr' ? 'Dernier signal : ' : 'آخر إشارة : '}{selectedFridge.alertTimestamp || '2026-07-22 14:15'}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFridges(prev => prev.map(f => f.id === selectedFridge.id ? { ...f, isLocationAlert: false, alertReason: undefined } : f));
-                          }}
-                          className="w-full py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow transition-all cursor-pointer"
-                        >
-                          {lang === 'fr' ? 'Résoudre l\'Alerte / Valider Emplacement' : 'تأكيد الموقع وإلغاء التنبيه'}
-                        </button>
-                      </div>
-                    ) : (
+                    {isFilterActive && (
                       <button
-                        type="button"
                         onClick={() => {
-                          setFridges(prev => prev.map(f => f.id === selectedFridge.id ? {
-                            ...f,
-                            isLocationAlert: true,
-                            alertReason: '⚠️ Déplacement suspect hors périmètre (+3.8 km détecté)',
-                            alertTimestamp: new Date().toISOString().replace('T', ' ').slice(0, 16)
-                          } : f));
+                          setGeolocSelectedCity('all');
+                          setGeolocFilterStatus('all');
+                          setGeolocSearchTerm('');
+                          playBip(600, 0.05);
                         }}
-                        className="w-full py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-[11px] font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        className="px-3 py-2 text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-bold uppercase flex items-center gap-1.5"
                       >
-                        <AlertTriangle className="h-3.5 w-3.5" />
-                        <span>{lang === 'fr' ? 'Simuler Alerte Déplacement GPS' : 'تجربة تنبيه تغيير الموقع'}</span>
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>{lang === 'fr' ? 'Réinitialiser' : 'إعادة ضبط'}</span>
                       </button>
                     )}
-
-                    {/* Delivery & Usage Analytics Grid */}
-                    <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400 font-bold uppercase text-[10px]">Ville / Dépôt</span>
-                        <span className="font-bold text-slate-800 dark:text-white">{selectedFridge.depot}</span>
-                      </div>
-
-                      <div className="flex justify-between">
-                        <span className="text-slate-400 font-bold uppercase text-[10px]">Emplacement Actuel</span>
-                        <span className="font-bold text-sky-600 dark:text-sky-400 truncate max-w-[150px]">
-                          {selectedFridge.status === 'service' ? selectedFridge.client : `Dépôt ${selectedFridge.depot}`}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between">
-                        <span className="text-slate-400 font-bold uppercase text-[10px]">Chauffeur Attribué</span>
-                        <span className="font-bold text-slate-700 dark:text-slate-300">
-                          {driversList.find(d => d.id === selectedFridge.driverId)?.name.split(' (')[0] || 'Non assigné'}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between font-mono">
-                        <span className="text-slate-400 font-bold uppercase text-[10px]">Coordonnées GPS</span>
-                        <span className="text-slate-700 dark:text-slate-300 text-[11px]">
-                          {selectedFridge.gps ? `${selectedFridge.gps.lat.toFixed(4)}, ${selectedFridge.gps.lng.toFixed(4)}` : `${cityInfo.lat}, ${cityInfo.lng}`}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between font-mono">
-                        <span className="text-slate-400 font-bold uppercase text-[10px]">Distance de Tit Mellil</span>
-                        <span className="text-amber-600 dark:text-amber-400 font-bold">
-                          {distanceKm} Km
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Delivery Stats Highlights */}
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Jours de Livraison' : 'أيام التسليم'}</span>
-                        <span className="font-mono font-black text-sky-600 dark:text-sky-400 text-sm">{selectedFridge.deliveryDaysCount || 64} Jours</span>
-                      </div>
-
-                      <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Quantité Livrée' : 'الكمية المسلمة'}</span>
-                        <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-sm">{(selectedFridge.totalCartonsDelivered || 612).toLocaleString()} Cartons</span>
-                      </div>
-                    </div>
-
-                    {/* PDF Report Export Button (2026 Edition) */}
-                    <button
-                      type="button"
-                      onClick={() => generateFridgePdfReport(selectedFridge, lang)}
-                      className="w-full py-3 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white font-black text-xs rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all cursor-pointer active:scale-95"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span>{lang === 'fr' ? 'Télécharger Rapport PDF (Design 2026)' : 'تحميل تقرير PDF الاحترافي (2026)'}</span>
-                    </button>
-
-                    {/* Google Maps External Link */}
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${selectedFridge.gps ? selectedFridge.gps.lat : cityInfo.lat},${selectedFridge.gps ? selectedFridge.gps.lng : cityInfo.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all block text-center"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      {lang === 'fr' ? 'Ouvrir dans Google Maps' : 'فتح الموقع على الخريطة'}
-                    </a>
                   </div>
-                );
-              })()}
-            </div>
+                </div>
 
-          </div>
+                {/* 2. KPI METRICS RIBBON */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+                  {/* Flotte Géolocalisée */}
+                  <div
+                    onClick={() => { setGeolocSelectedCity('all'); setGeolocFilterStatus('all'); playBip(700, 0.04); }}
+                    className="p-4 rounded-2xl border bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/40 transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Total Géolocalisés' : 'إجمالي المتتبعة'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <Globe className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-slate-800 dark:text-white font-mono tracking-tight">
+                      {totalGeolocated}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {citiesCovered} {lang === 'fr' ? 'Villes couvertes' : 'مدينة مغطاة بالمغرب'}
+                    </div>
+                  </div>
 
-          {/* Full Geolocated List Below Map */}
-          <div className="space-y-3">
-            <h4 className="font-black text-slate-800 dark:text-white text-xs uppercase tracking-wider flex items-center gap-2">
-              <Globe className="h-4 w-4 text-emerald-500" />
-              {lang === 'fr' ? 'Liste Complète du Parc Géolocalisé' : 'قائمة الثلاجات المحددة موقعياً'}
-            </h4>
+                  {/* En Service Points de Vente */}
+                  <div
+                    onClick={() => { setGeolocFilterStatus(geolocFilterStatus === 'service' ? 'all' : 'service'); playBip(700, 0.04); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      geolocFilterStatus === 'service'
+                        ? 'bg-green-500/10 border-green-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-green-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Points de Vente' : 'نقاط بيع في الخدمة'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
+                        <Building2 className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-green-600 dark:text-green-400 font-mono tracking-tight">
+                      {inServiceCount}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Actifs chez les clients' : 'موزعة لدى المتاجر'}
+                    </div>
+                  </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              {fridges
-                .filter(f => geolocSelectedCity === 'all' || f.depot === geolocSelectedCity)
-                .filter(f => geolocFilterStatus === 'all' || f.status === geolocFilterStatus)
-                .map(f => {
-                  const isSelected = f.id === geolocSelectedFridgeId;
+                  {/* En Stock Dépôts */}
+                  <div
+                    onClick={() => { setGeolocFilterStatus(geolocFilterStatus === 'stock' ? 'all' : 'stock'); playBip(700, 0.04); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      geolocFilterStatus === 'stock'
+                        ? 'bg-sky-500/10 border-sky-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-sky-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Dépôts Régionaux' : 'بالمستودعات الإقليمية'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                        <Warehouse className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-sky-600 dark:text-sky-400 font-mono tracking-tight">
+                      {inStockCount}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Disponibles en réserve' : 'جاهزة للتحويل والاستعمال'}
+                    </div>
+                  </div>
 
-                  return (
-                    <div
-                      key={f.id}
-                      onClick={() => { setGeolocSelectedFridgeId(f.id); playBip(700, 0.04); }}
-                      className={`p-3.5 rounded-2xl border cursor-pointer transition-all space-y-2 ${
-                        isSelected
-                          ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-500 ring-2 ring-emerald-500/20'
-                          : 'bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/40 border-slate-100 dark:border-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono font-black text-xs text-slate-800 dark:text-white">{f.serialNumber}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                          f.status === 'service' ? 'bg-green-100 text-green-700' : f.status === 'stock' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {f.status === 'service' ? 'Service' : f.status === 'stock' ? 'Stock' : 'Maintenance'}
+                  {/* En Maintenance */}
+                  <div
+                    onClick={() => { setGeolocFilterStatus(geolocFilterStatus === 'maintenance' ? 'all' : 'maintenance'); playBip(700, 0.04); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      geolocFilterStatus === 'maintenance'
+                        ? 'bg-amber-500/10 border-amber-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-amber-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Atelier & Révision' : 'ورشة الصيانة'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <Wrench className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
+                      {inMaintenanceCount}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'En cours de diagnostic' : 'خاضعة للإصلاح والفحص'}
+                    </div>
+                  </div>
+
+                  {/* Alertes Périmètre GPS */}
+                  <div
+                    className={`p-4 rounded-2xl border transition-all relative overflow-hidden ${
+                      alertCount > 0
+                        ? 'bg-rose-500/10 border-rose-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Alertes GPS' : 'تنبيهات الموقع'}
+                      </span>
+                      <div className={`p-2 rounded-xl ${alertCount > 0 ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 animate-bounce' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                        <BellRing className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className={`mt-2 text-2xl font-black font-mono tracking-tight ${alertCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-white'}`}>
+                      {alertCount}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {alertCount > 0 ? (lang === 'fr' ? 'Déplacement suspect' : 'تحرك مشبوه مسجل') : (lang === 'fr' ? 'Aucune anomalie' : 'كل الأجهزة في مواقعها')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. CONTROLS & FILTER TOOLBAR */}
+                <div className="bg-white dark:bg-slate-850 p-4 sm:p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    
+                    {/* Ville / Dépôt Filter */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-emerald-500" />
+                        <span>{lang === 'fr' ? 'Filtrer par Ville / Dépôt :' : 'تصفية حسب المدينة / المستودع :'}</span>
+                      </label>
+                      <select
+                        value={geolocSelectedCity}
+                        onChange={(e) => { setGeolocSelectedCity(e.target.value); playBip(700, 0.04); }}
+                        className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-700/80 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-bold outline-none focus:border-emerald-500 shadow-sm cursor-pointer"
+                      >
+                        <option value="all">{lang === 'fr' ? 'Toutes les villes & dépôts (Vue globale)' : 'كافة المدن والمستودعات (عرض شامل)'}</option>
+                        {Object.keys(MOROCCO_CITY_COORDS).map(city => {
+                          const countInCity = fridges.filter(f => f.depot === city).length;
+                          return (
+                            <option key={city} value={city}>
+                              {city} ({countInCity} {lang === 'fr' ? 'réfrigérateurs' : 'ثلاجة'})
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    {/* Statut Filter */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 flex items-center gap-1.5">
+                        <Filter className="h-3.5 w-3.5 text-emerald-500" />
+                        <span>{lang === 'fr' ? 'Statut Opérationnel :' : 'الحالة التشغيلية :'}</span>
+                      </label>
+                      <select
+                        value={geolocFilterStatus}
+                        onChange={(e) => { setGeolocFilterStatus(e.target.value as any); playBip(700, 0.04); }}
+                        className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-700/80 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-bold outline-none focus:border-emerald-500 shadow-sm cursor-pointer"
+                      >
+                        <option value="all">{lang === 'fr' ? 'Tous les statuts' : 'كافة الحالات'}</option>
+                        <option value="service">{lang === 'fr' ? 'En Service (Chez le Client)' : 'في الخدمة (لدى العميل)'}</option>
+                        <option value="stock">{lang === 'fr' ? 'En Stock (Dépôt Régional)' : 'في المخزون (المستودع)'}</option>
+                        <option value="maintenance">{lang === 'fr' ? 'En Maintenance (Atelier R&M)' : 'في الصيانة (الورشة)'}</option>
+                      </select>
+                    </div>
+
+                    {/* Real-time Search */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 flex items-center gap-1.5">
+                        <Search className="h-3.5 w-3.5 text-emerald-500" />
+                        <span>{lang === 'fr' ? 'Recherche Appareil (S/N, Client) :' : 'بحث مباشر (الرقم، العميل) :'}</span>
+                      </label>
+                      <div className="relative">
+                        <Search className="h-4 w-4 absolute left-3 top-3 text-slate-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={geolocSearchTerm}
+                          onChange={(e) => setGeolocSearchTerm(e.target.value)}
+                          placeholder={lang === 'fr' ? "N° série, client, adresse..." : "ابحث برقم التسلسل، العميل، العنوان..."}
+                          className="w-full pl-9 pr-8 py-2.5 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-bold outline-none focus:border-emerald-500 shadow-sm"
+                        />
+                        {geolocSearchTerm && (
+                          <button
+                            onClick={() => setGeolocSearchTerm('')}
+                            className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* 4. INTERACTIVE MAP & TELEMETRY GRID */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  
+                  {/* Left 2 Cols: High-Tech OpenStreetMap Interactive Leaflet Map */}
+                  <div className="lg:col-span-2 min-h-[520px] bg-white dark:bg-slate-850 p-3 sm:p-4 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center justify-between pb-3 px-1 border-b border-slate-100 dark:border-slate-800 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                          <Compass className="h-4 w-4" />
+                        </div>
+                        <span className="text-xs font-black uppercase text-slate-800 dark:text-white">
+                          {lang === 'fr' ? 'Carte Interactive du Maroc (Leaflet OSM)' : 'خريطة المغرب التفاعلية (OSM)'}
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold truncate flex items-center gap-1">
-                        <MapPin className="h-3 w-3 text-emerald-500 shrink-0" />
-                        {f.status === 'service' ? f.client : `Dépôt ${f.depot}`}
-                      </p>
-
-                      <div className="pt-1 border-t border-slate-100 dark:border-slate-800 text-[10px] font-mono text-slate-400 flex justify-between">
-                        <span>{f.depot}</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">GPS Connecté</span>
+                      <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400">
+                        <span>{geolocSelectedCity === 'all' ? (lang === 'fr' ? 'Vue Nationale' : 'النطاق الوطني') : `Focus: ${geolocSelectedCity}`}</span>
                       </div>
                     </div>
-                  );
-                })}
-            </div>
-          </div>
+
+                    <div className="flex-1 rounded-2xl overflow-hidden min-h-[460px]">
+                      <OpenStreetMapGeoloc 
+                        fridges={fridges}
+                        selectedCity={geolocSelectedCity}
+                        filterStatus={geolocFilterStatus}
+                        searchTerm={geolocSearchTerm}
+                        selectedFridgeId={geolocSelectedFridgeId}
+                        onSelectFridge={(id) => {
+                          setGeolocSelectedFridgeId(id);
+                          playBip(800, 0.05);
+                        }}
+                        lang={lang}
+                        moroccoCityCoords={MOROCCO_CITY_COORDS}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Right 1 Col: Selected Fridge GPS Telemetry Details Card */}
+                  <div className="space-y-4">
+                    {(() => {
+                      const selectedFridge = fridges.find(f => f.id === geolocSelectedFridgeId);
+
+                      if (!selectedFridge) {
+                        return (
+                          <div className="bg-slate-50 dark:bg-slate-850 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 space-y-4 text-center shadow-sm">
+                            <div className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl w-14 h-14 mx-auto flex items-center justify-center shadow-inner">
+                              <MapPin className="h-7 w-7 animate-bounce" />
+                            </div>
+                            <div className="space-y-1">
+                              <h4 className="font-black text-slate-800 dark:text-white text-sm uppercase">
+                                {lang === 'fr' ? 'Sélectionnez un appareil sur la carte' : 'اختر ثلاجة من الخريطة'}
+                              </h4>
+                              <p className="text-xs text-slate-400 leading-relaxed">
+                                {lang === 'fr' 
+                                  ? 'Cliquez sur n\'importe quel marqueur sur la carte ou dans la liste ci-dessous pour afficher sa position GPS exacte, télémétrie et données de livraison.'
+                                  : 'انقر على أي ثلاجة في الخريطة أو القائمة لعرض إحداثياتها الدقيقة، بيانات التوزيع، وتفاصيل التتبع المباشر.'}
+                              </p>
+                            </div>
+
+                            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2 text-left text-xs">
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                <span className="text-[10px] text-slate-400 font-bold block uppercase">{lang === 'fr' ? 'Total Flotte' : 'الأسطول'}</span>
+                                <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-base">{totalGeolocated}</span>
+                              </div>
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                <span className="text-[10px] text-slate-400 font-bold block uppercase">{lang === 'fr' ? 'Villes' : 'المدن'}</span>
+                                <span className="font-mono font-black text-sky-600 dark:text-sky-400 text-base">{citiesCovered}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      const cityInfo = MOROCCO_CITY_COORDS[selectedFridge.depot] || MOROCCO_CITY_COORDS['Casablanca'];
+                      const distanceKm = (cityInfo.lat && cityInfo.lng) ? Math.round(Math.hypot((cityInfo.lat - 33.5731) * 111, (cityInfo.lng - (-7.5898)) * 111)) : 0;
+
+                      return (
+                        <div className="bg-white dark:bg-slate-850 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 space-y-4 shadow-sm relative animate-in fade-in">
+                          
+                          {/* Header with Hide button */}
+                          <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-3 rounded-2xl flex items-center justify-center ${selectedFridge.isLocationAlert ? 'bg-rose-500/20 text-rose-500 animate-pulse' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                                <MapPin className="h-6 w-6" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <h4 className="font-mono font-black text-slate-900 dark:text-white text-sm">{selectedFridge.serialNumber}</h4>
+                                  {selectedFridge.isLocationAlert && (
+                                    <span className="px-1.5 py-0.5 bg-rose-600 text-white text-[9px] font-black rounded uppercase animate-bounce">
+                                      ALERTE GPS
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="px-2 py-0.5 bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 text-[10px] font-black rounded-full uppercase inline-block">
+                                    {selectedFridge.type === 'chest' || selectedFridge.type === 'AP' ? 'Coffre / AP' : 'Vitrine / AG'}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase inline-block ${
+                                    selectedFridge.status === 'service' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400' :
+                                    selectedFridge.status === 'maintenance' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400' :
+                                    'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400'
+                                  }`}>
+                                    {selectedFridge.status}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => setGeolocSelectedFridgeId(null)}
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                              title={lang === 'fr' ? 'Masquer cette fiche' : 'إخفاء'}
+                            >
+                              <EyeOff className="h-3.5 w-3.5" />
+                              <span>{lang === 'fr' ? 'Masquer' : 'إخفاء'}</span>
+                            </button>
+                          </div>
+
+                          {/* GPS Movement Alert Action Box */}
+                          {selectedFridge.isLocationAlert ? (
+                            <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl space-y-2">
+                              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs">
+                                <BellRing className="h-4 w-4 animate-bounce shrink-0" />
+                                <span>{selectedFridge.alertReason || 'Changement de position GPS détecté !'}</span>
+                              </div>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                                {lang === 'fr' ? 'Dernier signal : ' : 'آخر إشارة : '}{selectedFridge.alertTimestamp || '2026-07-22 14:15'}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFridges(prev => prev.map(f => f.id === selectedFridge.id ? { ...f, isLocationAlert: false, alertReason: undefined } : f));
+                                }}
+                                className="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow transition-all cursor-pointer uppercase"
+                              >
+                                {lang === 'fr' ? 'Résoudre l\'Alerte / Valider Emplacement' : 'تأكيد الموقع وإلغاء التنبيه'}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFridges(prev => prev.map(f => f.id === selectedFridge.id ? {
+                                  ...f,
+                                  isLocationAlert: true,
+                                  alertReason: '⚠️ Déplacement suspect hors périmètre (+3.8 km détecté)',
+                                  alertTimestamp: new Date().toISOString().replace('T', ' ').slice(0, 16)
+                                } : f));
+                              }}
+                              className="w-full py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <AlertTriangle className="h-3.5 w-3.5" />
+                              <span>{lang === 'fr' ? 'Simuler Alerte Déplacement GPS' : 'تجربة تنبيه تغيير الموقع'}</span>
+                            </button>
+                          )}
+
+                          {/* Technical & Operational Telemetry Grid */}
+                          <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-150 dark:border-slate-800/80 space-y-2 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-slate-400 font-bold uppercase text-[10px]">{lang === 'fr' ? 'Ville / Dépôt' : 'المدينة / المستودع'}</span>
+                              <span className="font-bold text-slate-800 dark:text-white">{selectedFridge.depot}</span>
+                            </div>
+
+                            <div className="flex justify-between">
+                              <span className="text-slate-400 font-bold uppercase text-[10px]">{lang === 'fr' ? 'Emplacement Actuel' : 'الموقع الحالي'}</span>
+                              <span className="font-bold text-sky-600 dark:text-sky-400 truncate max-w-[160px]">
+                                {selectedFridge.status === 'service' ? selectedFridge.client : `Dépôt ${selectedFridge.depot}`}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between">
+                              <span className="text-slate-400 font-bold uppercase text-[10px]">{lang === 'fr' ? 'Chauffeur Attribué' : 'السائق المخصص'}</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">
+                                {driversList.find(d => d.id === selectedFridge.driverId)?.name.split(' (')[0] || (lang === 'fr' ? 'Non assigné' : 'غير معين')}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between font-mono">
+                              <span className="text-slate-400 font-bold uppercase text-[10px]">{lang === 'fr' ? 'Coordonnées GPS' : 'إحداثيات GPS'}</span>
+                              <span className="text-slate-700 dark:text-slate-300 text-[11px] font-bold">
+                                {selectedFridge.gps ? `${selectedFridge.gps.lat.toFixed(4)}, ${selectedFridge.gps.lng.toFixed(4)}` : `${cityInfo.lat}, ${cityInfo.lng}`}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between font-mono">
+                              <span className="text-slate-400 font-bold uppercase text-[10px]">{lang === 'fr' ? 'Distance de Tit Mellil' : 'المسافة من تيط مليل'}</span>
+                              <span className="text-amber-600 dark:text-amber-400 font-bold">
+                                {distanceKm} Km
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Delivery Stats Highlights */}
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-150 dark:border-slate-800">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Jours de Livraison' : 'أيام التسليم'}</span>
+                              <span className="font-mono font-black text-sky-600 dark:text-sky-400 text-sm">{selectedFridge.deliveryDaysCount || 64} {lang === 'fr' ? 'Jours' : 'يوم'}</span>
+                            </div>
+
+                            <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-150 dark:border-slate-800">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase block">{lang === 'fr' ? 'Quantité Livrée' : 'الكمية المسلمة'}</span>
+                              <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-sm">{(selectedFridge.totalCartonsDelivered || 612).toLocaleString()} {lang === 'fr' ? 'Cartons' : 'علبة'}</span>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="space-y-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => generateFridgePdfReport(selectedFridge, lang)}
+                              className="w-full py-2.5 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white font-black text-xs rounded-xl flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer active:scale-95 uppercase tracking-wide"
+                            >
+                              <Download className="h-4 w-4" />
+                              <span>{lang === 'fr' ? 'Télécharger Rapport PDF (2026)' : 'تحميل تقرير PDF (2026)'}</span>
+                            </button>
+
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${selectedFridge.gps ? selectedFridge.gps.lat : cityInfo.lat},${selectedFridge.gps ? selectedFridge.gps.lng : cityInfo.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all block text-center"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              <span>{lang === 'fr' ? 'Ouvrir dans Google Maps' : 'فتح الموقع على الخريطة'}</span>
+                            </a>
+                          </div>
+
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                </div>
+
+                {/* 5. FULL GEOLOCATED FLEET CARDS GRID */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-black text-slate-800 dark:text-white text-xs uppercase tracking-wider flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-emerald-500" />
+                      <span>{lang === 'fr' ? 'Liste Complète du Parc Géolocalisé' : 'قائمة الأجهزة المحددة جغرافياً'}</span>
+                    </h4>
+                    <span className="text-[10px] font-mono text-slate-400 font-bold">
+                      {fridges
+                        .filter(f => geolocSelectedCity === 'all' || f.depot === geolocSelectedCity)
+                        .filter(f => geolocFilterStatus === 'all' || f.status === geolocFilterStatus)
+                        .filter(f => !geolocSearchTerm.trim() || f.serialNumber.toLowerCase().includes(geolocSearchTerm.toLowerCase()) || (f.client || '').toLowerCase().includes(geolocSearchTerm.toLowerCase())).length} {lang === 'fr' ? 'Appareils visibles' : 'جهاز مرئي'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {fridges
+                      .filter(f => geolocSelectedCity === 'all' || f.depot === geolocSelectedCity)
+                      .filter(f => geolocFilterStatus === 'all' || f.status === geolocFilterStatus)
+                      .filter(f => !geolocSearchTerm.trim() || f.serialNumber.toLowerCase().includes(geolocSearchTerm.toLowerCase()) || (f.client || '').toLowerCase().includes(geolocSearchTerm.toLowerCase()))
+                      .map(f => {
+                        const isSelected = f.id === geolocSelectedFridgeId;
+
+                        return (
+                          <div
+                            key={f.id}
+                            onClick={() => { setGeolocSelectedFridgeId(f.id); playBip(700, 0.04); }}
+                            className={`p-3.5 rounded-2xl border cursor-pointer transition-all space-y-2.5 ${
+                              isSelected
+                                ? 'bg-emerald-50/90 dark:bg-emerald-950/30 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm'
+                                : 'bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800/40 border-slate-200/80 dark:border-slate-800'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-mono font-black text-xs text-slate-900 dark:text-white">{f.serialNumber}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                f.status === 'service' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' :
+                                f.status === 'stock' ? 'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400' :
+                                'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
+                              }`}>
+                                {f.status}
+                              </span>
+                            </div>
+
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 font-bold truncate flex items-center gap-1">
+                              <MapPin className="h-3 w-3 text-emerald-500 shrink-0" />
+                              {f.status === 'service' ? (f.client || 'Client') : `Dépôt ${f.depot}`}
+                            </p>
+
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] font-mono text-slate-400 flex justify-between items-center">
+                              <span>Dépôt {f.depot}</span>
+                              {f.isLocationAlert ? (
+                                <span className="text-rose-600 dark:text-rose-400 font-black animate-pulse">Alerte GPS</span>
+                              ) : (
+                                <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                  GPS Connecté
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </>
+            );
+          })()}
 
         </div>
       )}
