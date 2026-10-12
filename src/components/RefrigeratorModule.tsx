@@ -6744,7 +6744,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                     <input type="submit" id="hidden-bon-submit" className="hidden" />
                   </form>
 
-                  {/* QUICK LOAD FROM CASABLANCA STOCK FOR BON D'ENTRÉE */}
+                  {/* QUICK LOAD FROM CASABLANCA STOCK OR HISTORIQUE DES BONS FOR BON D'ENTRÉE */}
                   {bonType === 'entry' && (() => {
                     const casaFridges = fridges.filter(f => f.status === 'stock' && (f.depot || '').toLowerCase().includes('casablanca'));
                     const casaAp = casaFridges.filter(f => f.type === 'chest' || f.type === 'AP');
@@ -6764,64 +6764,153 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       setBonAgRows(newAg);
                       setBonAsRows(newAs);
                       playBip(1100, 0.08);
+                      setBonToast({
+                        message: lang === 'fr' 
+                          ? `7 congélateurs de Casablanca chargés dans le tableau (AP: ${Math.min(3, casaAp.length)}, AG: ${Math.min(2, casaAg.length)}, AS: ${Math.min(2, casaAs.length)}) !`
+                          : `تم تحميل ثلاجات كازابلانكا في الجدول بنجاح!`,
+                        type: 'success'
+                      });
+                    };
+
+                    const handleLoadFromHistory = (selectedBonId: string) => {
+                      if (!selectedBonId) return;
+                      const bonToLoad = savedBons.find(b => b.id === selectedBonId);
+                      if (bonToLoad) {
+                        loadSavedBon(bonToLoad);
+                        setBonType('entry'); // maintain bonType as entry
+                        playBip(1200, 0.08);
+                        setBonToast({
+                          message: lang === 'fr' 
+                            ? `Données et congélateurs chargés depuis le Bon N° ${bonToLoad.bonNo} dans l'Historique !`
+                            : `تم تحميل الثلاجات والبيانات من الإذن رقم ${bonToLoad.bonNo} من سجل الأذونات بنجاح!`,
+                          type: 'success'
+                        });
+                      }
                     };
 
                     return (
-                      <div className="mb-2 p-3 bg-blue-50/80 border border-blue-200 rounded-xl flex flex-wrap items-center justify-between gap-2.5">
-                        <div className="flex items-center gap-2">
-                          <Warehouse className="h-4 w-4 text-blue-600 shrink-0" />
-                          <div className="text-xs">
-                            <span className="font-extrabold text-blue-950 block">
-                              {lang === 'fr' ? 'Stock disponible à Dépôt Casablanca :' : 'المخزون المتوفر بمستودع الدار البيضاء :'}
-                            </span>
-                            <span className="text-[11px] text-blue-700 font-semibold">
-                              AP: <b>{casaAp.length}</b> | AG: <b>{casaAg.length}</b> | AS: <b>{casaAs.length}</b> (Total: <b>{casaFridges.length}</b>)
-                            </span>
+                      <div className="mb-3 p-3.5 bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 dark:from-slate-800 dark:to-slate-850 border border-blue-200 dark:border-blue-900/40 rounded-xl space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2.5">
+                          <div className="flex items-center gap-2">
+                            <Warehouse className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                            <div className="text-xs">
+                              <span className="font-extrabold text-blue-950 dark:text-white block">
+                                {lang === 'fr' ? 'Stock disponible à Dépôt Casablanca :' : 'المخزون المتوفر بمستودع الدار البيضاء :'}
+                              </span>
+                              <span className="text-[11px] text-blue-700 dark:text-blue-300 font-semibold">
+                                AP: <b>{casaAp.length}</b> | AG: <b>{casaAg.length}</b> | AS: <b>{casaAs.length}</b> (Total: <b>{casaFridges.length}</b>)
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              disabled={casaFridges.length === 0}
+                              onClick={handleLoadCasaFridges}
+                              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg transition-all shadow-sm flex items-center gap-1.5"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              {lang === 'fr' ? 'Charger les congélateurs de Casablanca' : 'تحميل ثلاجات كازابلانكا في الجدول'}
+                            </button>
+                            {(bonApRows.some(s => s) || bonAgRows.some(s => s) || bonAsRows.some(s => s)) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setBonApRows(Array(10).fill(''));
+                                  setBonAgRows(Array(10).fill(''));
+                                  setBonAsRows(Array(10).fill(''));
+                                  playBip(700, 0.04);
+                                }}
+                                className="px-2.5 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg transition-all"
+                                title="Vider le tableau"
+                              >
+                                {lang === 'fr' ? 'Vider' : 'تفريغ'}
+                              </button>
+                            )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            disabled={casaFridges.length === 0}
-                            onClick={handleLoadCasaFridges}
-                            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg transition-all shadow-sm flex items-center gap-1.5"
-                          >
-                            <Download className="h-3.5 w-3.5" />
-                            {lang === 'fr' ? 'Charger les congélateurs de Casablanca dans le tableau' : 'تحميل ثلاجات كازابلانكا في الجدول'}
-                          </button>
-                          {(bonApRows.some(s => s) || bonAgRows.some(s => s) || bonAsRows.some(s => s)) && (
+                        {/* LOAD DIRECTLY FROM HISTORIQUE DES BONS */}
+                        <div className="pt-2 border-t border-blue-200/60 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <History className="h-4 w-4 text-amber-500 shrink-0" />
+                            <span className="font-bold text-slate-800 dark:text-slate-200">
+                              {lang === 'fr' ? 'Ou charger depuis un Bon de l\'Historique :' : 'أو تحميل من سجل الأذونات السابق :'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-1 max-w-md">
+                            <select
+                              onChange={(e) => handleLoadFromHistory(e.target.value)}
+                              defaultValue=""
+                              className="w-full bg-white dark:bg-slate-850 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                            >
+                              <option value="">{lang === 'fr' ? '-- Sélectionner un Bon de l\'Historique --' : '-- اختر إذن من السجل للتحميل --'}</option>
+                              {savedBons
+                                .filter(b => (b.apRows && b.apRows.some((s: string) => s)) || (b.agRows && b.agRows.some((s: string) => s)) || b.type === 'livraison' || b.type === 'entry')
+                                .map(b => {
+                                  const apC = (b.apRows || []).filter((s: string) => s).length;
+                                  const agC = (b.agRows || []).filter((s: string) => s).length;
+                                  const asC = (b.asRows || []).filter((s: string) => s).length;
+                                  const typeName = b.type === 'livraison' ? 'Livraison' : b.type === 'entry' ? 'Entrée' : b.type;
+                                  return (
+                                    <option key={b.id} value={b.id}>
+                                      {typeName} N° {b.bonNo} ({b.depot || 'Casablanca'}) - {apC + agC + asC} fridges ({b.date})
+                                    </option>
+                                  );
+                                })}
+                            </select>
+
                             <button
                               type="button"
-                              onClick={() => {
-                                setBonApRows(Array(10).fill(''));
-                                setBonAgRows(Array(10).fill(''));
-                                setBonAsRows(Array(10).fill(''));
-                                playBip(700, 0.04);
-                              }}
-                              className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition-all"
-                              title="Vider le tableau"
+                              onClick={() => { setActiveSubTab('historique'); playBip(800, 0.05); }}
+                              className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs shrink-0 transition-all flex items-center gap-1 shadow-sm"
                             >
-                              {lang === 'fr' ? 'Vider' : 'تفريغ'}
+                              <History className="h-3.5 w-3.5" />
+                              {lang === 'fr' ? 'Historique' : 'السجل'}
                             </button>
-                          )}
+                          </div>
                         </div>
                       </div>
                     );
                   })()}
 
+                  {/* HTML5 DATALISTS FOR RAPID SELECTION */}
+                  <datalist id="bon-casa-ap-list">
+                    {fridges
+                      .filter(f => f.status === 'stock' && (f.type === 'chest' || f.type === 'AP') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
+                      .map(f => (
+                        <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
+                      ))}
+                  </datalist>
+                  <datalist id="bon-casa-ag-list">
+                    {fridges
+                      .filter(f => f.status === 'stock' && (f.type === 'upright' || f.type === 'AG') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
+                      .map(f => (
+                        <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
+                      ))}
+                  </datalist>
+                  <datalist id="bon-casa-as-list">
+                    {fridges
+                      .filter(f => f.status === 'stock' && f.type === 'AS' && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
+                      .map(f => (
+                        <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
+                      ))}
+                  </datalist>
+
                   {/* CORE TABLE: AP VS AG VS AS */}
-                  <div className="border-2 border-slate-900 rounded-lg overflow-hidden bg-white mt-2">
+                  <div className="border-2 border-slate-900 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900 mt-2 shadow-sm">
                     <table className="w-full text-center text-xs border-collapse">
                       <thead>
-                        <tr className="bg-slate-100 text-slate-900 font-black uppercase text-sm border-b-2 border-slate-900">
-                          <th colSpan={2} className="py-2 px-2 border-r-2 border-slate-900 w-1/3">
+                        <tr className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black uppercase text-xs sm:text-sm border-b-2 border-slate-900 dark:border-slate-700">
+                          <th colSpan={2} className="py-2.5 px-2 border-r-2 border-slate-900 dark:border-slate-700 w-1/3 bg-blue-50/50 dark:bg-blue-950/30 text-blue-950 dark:text-blue-300">
                             AP (Coffre)
                           </th>
-                          <th colSpan={2} className="py-2 px-2 border-r-2 border-slate-900 w-1/3">
+                          <th colSpan={2} className="py-2.5 px-2 border-r-2 border-slate-900 dark:border-slate-700 w-1/3 bg-amber-50/50 dark:bg-amber-950/30 text-amber-950 dark:text-amber-300">
                             AG (Vitrine)
                           </th>
-                          <th colSpan={2} className="py-2 px-2 w-1/3">
+                          <th colSpan={2} className="py-2.5 px-2 w-1/3 bg-purple-50/50 dark:bg-purple-950/30 text-purple-950 dark:text-purple-300">
                             AS (Spécial)
                           </th>
                         </tr>
@@ -6837,13 +6926,14 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                           const asIdx2 = rowIdx * 2 + 1;
 
                           return (
-                            <tr key={rowIdx} className="border-b border-slate-300">
+                            <tr key={rowIdx} className="border-b border-slate-300 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
                               
                               {/* AP 1 */}
-                              <td className="py-1 px-1 border-r border-slate-300 w-1/6 relative">
-                                <div className="flex items-center gap-0.5">
+                              <td className="py-1 px-1 border-r border-slate-300 dark:border-slate-700 w-1/6 relative group">
+                                <div className="relative flex items-center">
                                   <input
                                     type="text"
+                                    list="bon-casa-ap-list"
                                     placeholder="............"
                                     value={bonApRows[apIdx1] || ''}
                                     onChange={(e) => {
@@ -6851,28 +6941,21 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                       updated[apIdx1] = e.target.value.toUpperCase();
                                       setBonApRows(updated);
                                     }}
-                                    className="w-full bg-white text-center font-mono font-bold text-slate-900 border-b border-dashed border-slate-300 focus:border-slate-900 focus:bg-amber-50/50 py-1 px-0.5 text-[10px] focus:outline-none transition-all"
+                                    className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
-                                  {bonType === 'sortie' || bonType === 'entry' ? (
-                                    <select
-                                      onChange={(e) => {
-                                        if (!e.target.value) return;
+                                  {bonApRows[apIdx1] ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
                                         const updated = [...bonApRows];
-                                        updated[apIdx1] = e.target.value;
+                                        updated[apIdx1] = '';
                                         setBonApRows(updated);
-                                        playBip(800, 0.04);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-0.5 py-0.5 text-slate-700 cursor-pointer"
-                                      value=""
-                                      title={bonType === 'entry' ? "Sélectionner depuis Dépôt Casablanca" : "Sélectionner depuis Stock"}
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
+                                      title="Effacer"
                                     >
-                                      <option value="">+</option>
-                                      {fridges
-                                        .filter(f => f.status === 'stock' && (f.type === 'chest' || f.type === 'AP') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
-                                        .map(f => (
-                                          <option key={f.id} value={f.serialNumber}>{f.serialNumber} ({f.depot})</option>
-                                        ))}
-                                    </select>
+                                      ×
+                                    </button>
                                   ) : bonType !== 'entry' ? (
                                     <button
                                       type="button"
@@ -6882,7 +6965,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                         setBonApRows(updated);
                                         playBip(900, 0.05);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded px-1 py-0.5 shrink-0"
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
                                       title="Générer N°"
                                     >
                                       +
@@ -6892,10 +6975,11 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                               </td>
 
                               {/* AP 2 */}
-                              <td className="py-1 px-1 border-r-2 border-slate-900 w-1/6 relative">
-                                <div className="flex items-center gap-0.5">
+                              <td className="py-1 px-1 border-r-2 border-slate-900 dark:border-slate-700 w-1/6 relative group">
+                                <div className="relative flex items-center">
                                   <input
                                     type="text"
+                                    list="bon-casa-ap-list"
                                     placeholder="............"
                                     value={bonApRows[apIdx2] || ''}
                                     onChange={(e) => {
@@ -6903,28 +6987,21 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                       updated[apIdx2] = e.target.value.toUpperCase();
                                       setBonApRows(updated);
                                     }}
-                                    className="w-full bg-white text-center font-mono font-bold text-slate-900 border-b border-dashed border-slate-300 focus:border-slate-900 focus:bg-amber-50/50 py-1 px-0.5 text-[10px] focus:outline-none transition-all"
+                                    className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
-                                  {bonType === 'sortie' || bonType === 'entry' ? (
-                                    <select
-                                      onChange={(e) => {
-                                        if (!e.target.value) return;
+                                  {bonApRows[apIdx2] ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
                                         const updated = [...bonApRows];
-                                        updated[apIdx2] = e.target.value;
+                                        updated[apIdx2] = '';
                                         setBonApRows(updated);
-                                        playBip(800, 0.04);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-0.5 py-0.5 text-slate-700 cursor-pointer"
-                                      value=""
-                                      title={bonType === 'entry' ? "Sélectionner depuis Dépôt Casablanca" : "Sélectionner depuis Stock"}
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
+                                      title="Effacer"
                                     >
-                                      <option value="">+</option>
-                                      {fridges
-                                        .filter(f => f.status === 'stock' && (f.type === 'chest' || f.type === 'AP') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
-                                        .map(f => (
-                                          <option key={f.id} value={f.serialNumber}>{f.serialNumber} ({f.depot})</option>
-                                        ))}
-                                    </select>
+                                      ×
+                                    </button>
                                   ) : bonType !== 'entry' ? (
                                     <button
                                       type="button"
@@ -6934,7 +7011,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                         setBonApRows(updated);
                                         playBip(900, 0.05);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded px-1 py-0.5 shrink-0"
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
                                       title="Générer N°"
                                     >
                                       +
@@ -6944,10 +7021,11 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                               </td>
 
                               {/* AG 1 */}
-                              <td className="py-1 px-1 border-r border-slate-300 w-1/6 relative">
-                                <div className="flex items-center gap-0.5">
+                              <td className="py-1 px-1 border-r border-slate-300 dark:border-slate-700 w-1/6 relative group">
+                                <div className="relative flex items-center">
                                   <input
                                     type="text"
+                                    list="bon-casa-ag-list"
                                     placeholder="............"
                                     value={bonAgRows[agIdx1] || ''}
                                     onChange={(e) => {
@@ -6955,28 +7033,21 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                       updated[agIdx1] = e.target.value.toUpperCase();
                                       setBonAgRows(updated);
                                     }}
-                                    className="w-full bg-white text-center font-mono font-bold text-slate-900 border-b border-dashed border-slate-300 focus:border-slate-900 focus:bg-amber-50/50 py-1 px-0.5 text-[10px] focus:outline-none transition-all"
+                                    className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
-                                  {bonType === 'sortie' || bonType === 'entry' ? (
-                                    <select
-                                      onChange={(e) => {
-                                        if (!e.target.value) return;
+                                  {bonAgRows[agIdx1] ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
                                         const updated = [...bonAgRows];
-                                        updated[agIdx1] = e.target.value;
+                                        updated[agIdx1] = '';
                                         setBonAgRows(updated);
-                                        playBip(800, 0.04);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-0.5 py-0.5 text-slate-700 cursor-pointer"
-                                      value=""
-                                      title={bonType === 'entry' ? "Sélectionner depuis Dépôt Casablanca" : "Sélectionner depuis Stock"}
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
+                                      title="Effacer"
                                     >
-                                      <option value="">+</option>
-                                      {fridges
-                                        .filter(f => f.status === 'stock' && (f.type === 'upright' || f.type === 'AG') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
-                                        .map(f => (
-                                          <option key={f.id} value={f.serialNumber}>{f.serialNumber} ({f.depot})</option>
-                                        ))}
-                                    </select>
+                                      ×
+                                    </button>
                                   ) : bonType !== 'entry' ? (
                                     <button
                                       type="button"
@@ -6986,7 +7057,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                         setBonAgRows(updated);
                                         playBip(900, 0.05);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded px-1 py-0.5 shrink-0"
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
                                       title="Générer N°"
                                     >
                                       +
@@ -6996,10 +7067,11 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                               </td>
 
                               {/* AG 2 */}
-                              <td className="py-1 px-1 border-r-2 border-slate-900 w-1/6 relative">
-                                <div className="flex items-center gap-0.5">
+                              <td className="py-1 px-1 border-r-2 border-slate-900 dark:border-slate-700 w-1/6 relative group">
+                                <div className="relative flex items-center">
                                   <input
                                     type="text"
+                                    list="bon-casa-ag-list"
                                     placeholder="............"
                                     value={bonAgRows[agIdx2] || ''}
                                     onChange={(e) => {
@@ -7007,28 +7079,21 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                       updated[agIdx2] = e.target.value.toUpperCase();
                                       setBonAgRows(updated);
                                     }}
-                                    className="w-full bg-white text-center font-mono font-bold text-slate-900 border-b border-dashed border-slate-300 focus:border-slate-900 focus:bg-amber-50/50 py-1 px-0.5 text-[10px] focus:outline-none transition-all"
+                                    className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
-                                  {bonType === 'sortie' || bonType === 'entry' ? (
-                                    <select
-                                      onChange={(e) => {
-                                        if (!e.target.value) return;
+                                  {bonAgRows[agIdx2] ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
                                         const updated = [...bonAgRows];
-                                        updated[agIdx2] = e.target.value;
+                                        updated[agIdx2] = '';
                                         setBonAgRows(updated);
-                                        playBip(800, 0.04);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-0.5 py-0.5 text-slate-700 cursor-pointer"
-                                      value=""
-                                      title={bonType === 'entry' ? "Sélectionner depuis Dépôt Casablanca" : "Sélectionner depuis Stock"}
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
+                                      title="Effacer"
                                     >
-                                      <option value="">+</option>
-                                      {fridges
-                                        .filter(f => f.status === 'stock' && (f.type === 'upright' || f.type === 'AG') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
-                                        .map(f => (
-                                          <option key={f.id} value={f.serialNumber}>{f.serialNumber} ({f.depot})</option>
-                                        ))}
-                                    </select>
+                                      ×
+                                    </button>
                                   ) : bonType !== 'entry' ? (
                                     <button
                                       type="button"
@@ -7038,7 +7103,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                         setBonAgRows(updated);
                                         playBip(900, 0.05);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded px-1 py-0.5 shrink-0"
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
                                       title="Générer N°"
                                     >
                                       +
@@ -7048,10 +7113,11 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                               </td>
 
                               {/* AS 1 */}
-                              <td className="py-1 px-1 border-r border-slate-300 w-1/6 relative">
-                                <div className="flex items-center gap-0.5">
+                              <td className="py-1 px-1 border-r border-slate-300 dark:border-slate-700 w-1/6 relative group">
+                                <div className="relative flex items-center">
                                   <input
                                     type="text"
+                                    list="bon-casa-as-list"
                                     placeholder="............"
                                     value={bonAsRows[asIdx1] || ''}
                                     onChange={(e) => {
@@ -7059,28 +7125,21 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                       updated[asIdx1] = e.target.value.toUpperCase();
                                       setBonAsRows(updated);
                                     }}
-                                    className="w-full bg-white text-center font-mono font-bold text-slate-900 border-b border-dashed border-slate-300 focus:border-slate-900 focus:bg-amber-50/50 py-1 px-0.5 text-[10px] focus:outline-none transition-all"
+                                    className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
-                                  {bonType === 'sortie' || bonType === 'entry' ? (
-                                    <select
-                                      onChange={(e) => {
-                                        if (!e.target.value) return;
+                                  {bonAsRows[asIdx1] ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
                                         const updated = [...bonAsRows];
-                                        updated[asIdx1] = e.target.value;
+                                        updated[asIdx1] = '';
                                         setBonAsRows(updated);
-                                        playBip(800, 0.04);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-0.5 py-0.5 text-slate-700 cursor-pointer"
-                                      value=""
-                                      title={bonType === 'entry' ? "Sélectionner depuis Dépôt Casablanca" : "Sélectionner depuis Stock"}
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
+                                      title="Effacer"
                                     >
-                                      <option value="">+</option>
-                                      {fridges
-                                        .filter(f => f.status === 'stock' && f.type === 'AS' && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
-                                        .map(f => (
-                                          <option key={f.id} value={f.serialNumber}>{f.serialNumber} ({f.depot})</option>
-                                        ))}
-                                    </select>
+                                      ×
+                                    </button>
                                   ) : bonType !== 'entry' ? (
                                     <button
                                       type="button"
@@ -7090,7 +7149,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                         setBonAsRows(updated);
                                         playBip(900, 0.05);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded px-1 py-0.5 shrink-0"
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
                                       title="Générer N°"
                                     >
                                       +
@@ -7100,10 +7159,11 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                               </td>
 
                               {/* AS 2 */}
-                              <td className="py-1 px-1 w-1/6 relative">
-                                <div className="flex items-center gap-0.5">
+                              <td className="py-1 px-1 w-1/6 relative group">
+                                <div className="relative flex items-center">
                                   <input
                                     type="text"
+                                    list="bon-casa-as-list"
                                     placeholder="............"
                                     value={bonAsRows[asIdx2] || ''}
                                     onChange={(e) => {
@@ -7111,28 +7171,21 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                       updated[asIdx2] = e.target.value.toUpperCase();
                                       setBonAsRows(updated);
                                     }}
-                                    className="w-full bg-white text-center font-mono font-bold text-slate-900 border-b border-dashed border-slate-300 focus:border-slate-900 focus:bg-amber-50/50 py-1 px-0.5 text-[10px] focus:outline-none transition-all"
+                                    className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
-                                  {bonType === 'sortie' || bonType === 'entry' ? (
-                                    <select
-                                      onChange={(e) => {
-                                        if (!e.target.value) return;
+                                  {bonAsRows[asIdx2] ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
                                         const updated = [...bonAsRows];
-                                        updated[asIdx2] = e.target.value;
+                                        updated[asIdx2] = '';
                                         setBonAsRows(updated);
-                                        playBip(800, 0.04);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-0.5 py-0.5 text-slate-700 cursor-pointer"
-                                      value=""
-                                      title={bonType === 'entry' ? "Sélectionner depuis Dépôt Casablanca" : "Sélectionner depuis Stock"}
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
+                                      title="Effacer"
                                     >
-                                      <option value="">+</option>
-                                      {fridges
-                                        .filter(f => f.status === 'stock' && f.type === 'AS' && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
-                                        .map(f => (
-                                          <option key={f.id} value={f.serialNumber}>{f.serialNumber} ({f.depot})</option>
-                                        ))}
-                                    </select>
+                                      ×
+                                    </button>
                                   ) : bonType !== 'entry' ? (
                                     <button
                                       type="button"
@@ -7142,7 +7195,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                         setBonAsRows(updated);
                                         playBip(900, 0.05);
                                       }}
-                                      className="no-print text-[8px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded px-1 py-0.5 shrink-0"
+                                      className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
                                       title="Générer N°"
                                     >
                                       +
