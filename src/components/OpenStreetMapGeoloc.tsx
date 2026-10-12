@@ -157,6 +157,8 @@ export default function OpenStreetMapGeoloc({
   const prevSearchTermRef = useRef<string>(searchTerm);
   const lastFlownFridgeIdRef = useRef<string | null>(null);
   const userClosedPopupForIdRef = useRef<string | null>(null);
+  const onSelectFridgeRef = useRef(onSelectFridge);
+  onSelectFridgeRef.current = onSelectFridge;
 
   // Fullscreen toggle handler
   const toggleFullscreen = () => {
@@ -210,7 +212,8 @@ export default function OpenStreetMapGeoloc({
         center: [31.7917, -7.0926],
         zoom: 6,
         zoomControl: true,
-        scrollWheelZoom: true
+        scrollWheelZoom: true,
+        closePopupOnClick: true
       });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -219,6 +222,41 @@ export default function OpenStreetMapGeoloc({
       }).addTo(map);
 
       mapInstanceRef.current = map;
+
+      // When clicking outside on map background: close popup and deselect
+      map.on('click', () => {
+        userClosedPopupForIdRef.current = null;
+        lastFlownFridgeIdRef.current = null;
+        map.closePopup();
+        onSelectFridgeRef.current(null);
+      });
+
+      // Hook into popup events to attach close/exit button handlers
+      map.on('popupopen', (e) => {
+        const popupEl = e.popup.getElement();
+        if (popupEl) {
+          const closeBtns = popupEl.querySelectorAll('.js-close-fridge-popup');
+          closeBtns.forEach(btn => {
+            btn.addEventListener('click', (ev) => {
+              ev.preventDefault();
+              ev.stopPropagation();
+              userClosedPopupForIdRef.current = null;
+              lastFlownFridgeIdRef.current = null;
+              map.closePopup();
+              onSelectFridgeRef.current(null);
+            });
+          });
+
+          const defaultCloseBtn = popupEl.querySelector('.leaflet-popup-close-button');
+          if (defaultCloseBtn) {
+            defaultCloseBtn.addEventListener('click', () => {
+              userClosedPopupForIdRef.current = null;
+              lastFlownFridgeIdRef.current = null;
+              onSelectFridgeRef.current(null);
+            });
+          }
+        }
+      });
 
       map.on('popupclose', () => {
         if (lastFlownFridgeIdRef.current) {
@@ -407,19 +445,37 @@ export default function OpenStreetMapGeoloc({
             <b>📦 Remplissage Stock:</b> <span style="font-weight: 800; color: #0f172a;">${f.fillLevel}%</span>
           </div>
 
-          <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" rel="noopener noreferrer" style="
-            display: flex; align-items: center; justify-content: center; gap: 4px;
-            text-align: center; margin-top: 6px; padding: 7px 10px;
-            background-color: #0284c7; color: white; border-radius: 8px; text-decoration: none;
-            font-size: 10px; font-weight: 800; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.3);
-          ">
-            🗺️ Google Maps (${lat.toFixed(4)}, ${lng.toFixed(4)})
-          </a>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px;">
+            <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" rel="noopener noreferrer" style="
+              display: flex; align-items: center; justify-content: center; gap: 4px;
+              text-align: center; padding: 7px 8px;
+              background-color: #0284c7; color: white; border-radius: 8px; text-decoration: none;
+              font-size: 10px; font-weight: 800; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.3);
+            ">
+              🗺️ Maps
+            </a>
+            <button type="button" class="js-close-fridge-popup" style="
+              display: flex; align-items: center; justify-content: center; gap: 4px;
+              padding: 7px 8px;
+              background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;
+              border-radius: 8px; font-size: 10px; font-weight: 800; cursor: pointer;
+              transition: all 0.15s ease-in-out;
+            ">
+              ✕ ${lang === 'fr' ? 'Fermer' : 'خروج (إغلاق)'}
+            </button>
+          </div>
         </div>
       `;
 
       const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
-      marker.bindPopup(popupContent);
+      marker.bindPopup(popupContent, {
+        closeButton: true,
+        autoClose: true,
+        closeOnClick: true,
+        closeOnEscapeKey: true,
+        className: 'custom-leaflet-fridge-popup',
+        offset: [0, -10]
+      });
 
       marker.on('click', () => {
         userClosedPopupForIdRef.current = null;
@@ -547,14 +603,53 @@ export default function OpenStreetMapGeoloc({
 
             <button
               type="button"
-              onClick={() => onSelectFridge(null)}
+              onClick={() => {
+                mapInstanceRef.current?.closePopup();
+                onSelectFridge(null);
+              }}
               className="px-2.5 py-1.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
-              title={lang === 'fr' ? 'Masquer' : 'إخفاء'}
+              title={lang === 'fr' ? 'Fermer / Quitter' : 'خروج من البطاقة'}
             >
               <EyeOff className="h-3.5 w-3.5" />
-              <span>{lang === 'fr' ? 'Masquer' : 'إخفاء'}</span>
+              <span>{lang === 'fr' ? 'Fermer' : 'خروج'}</span>
             </button>
           </div>
+
+          {/* Custom Popup CSS */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            .custom-leaflet-fridge-popup .leaflet-popup-content-wrapper {
+              border-radius: 16px !important;
+              padding: 2px !important;
+              box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2) !important;
+              border: 1px solid #cbd5e1 !important;
+            }
+            .custom-leaflet-fridge-popup .leaflet-popup-close-button {
+              top: 10px !important;
+              right: 10px !important;
+              width: 24px !important;
+              height: 24px !important;
+              border-radius: 50% !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              background: #f1f5f9 !important;
+              color: #64748b !important;
+              font-size: 15px !important;
+              font-weight: 900 !important;
+              border: 1px solid #e2e8f0 !important;
+              transition: all 0.2s !important;
+            }
+            .custom-leaflet-fridge-popup .leaflet-popup-close-button:hover {
+              background: #fee2e2 !important;
+              color: #ef4444 !important;
+              border-color: #fca5a5 !important;
+            }
+            .js-close-fridge-popup:hover {
+              background-color: #fee2e2 !important;
+              color: #dc2626 !important;
+              border-color: #fca5a5 !important;
+            }
+          `}} />
 
           {/* Quick Metrics Bar inside Map Overlay Card */}
           <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800 text-center text-[10px]">
