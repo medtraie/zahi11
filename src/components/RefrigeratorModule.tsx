@@ -1976,8 +1976,10 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
     });
   };
 
-  const handleSaveBon = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveBon = (e?: React.FormEvent) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     const newMvts: RefrigeratorMovement[] = [];
 
     if (bonType === 'entry' || bonType === 'sortie' || bonType === 'livraison' || bonType === 'depot_regional') {
@@ -2215,10 +2217,11 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
           ? 'المستودع الجهوي' 
           : 'الدخول';
 
+        const affectedCount = bonType === 'livraison' ? allSerialsToCheck.length : allSerialsToCheck.length;
         setBonToast({
           message: lang === 'fr' 
-            ? `Bon ${bonTitleLabel} N° ${bonNo} enregistré ! ${newFridges.length} congélateurs affectés au Dépôt ${targetDepot}.`
-            : `تم تسجيل إذن ${bonTitleLabelAr} رقم ${bonNo} بنجاح! تم إضافة ${newFridges.length} ثلاجة لمستودع ${targetDepot}.`,
+            ? `Bon ${bonTitleLabel} N° ${bonNo} enregistré ! ${affectedCount} congélateurs affectés au Dépôt ${targetDepot}.`
+            : `تم تسجيل إذن ${bonTitleLabelAr} رقم ${bonNo} بنجاح! تم حفظ ${affectedCount} ثلاجة لمستودع ${targetDepot}.`,
           type: 'success'
         });
       } else {
@@ -5815,6 +5818,53 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
             </div>
           </div>
 
+          {/* NOTIFICATION TOAST ALERT (BON SAVED / ERROR) */}
+          {bonToast && (
+            <div 
+              className={`p-4 rounded-xl border flex items-center justify-between gap-3 shadow-lg transition-all animate-bounce duration-300 no-print ${
+                bonToast.type === 'success' 
+                  ? 'bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/20' 
+                  : 'bg-rose-500 text-white border-rose-600 shadow-rose-500/20'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                {bonToast.type === 'success' ? (
+                  <Check className="h-6 w-6 shrink-0 bg-white/20 p-1 rounded-full" />
+                ) : (
+                  <AlertTriangle className="h-6 w-6 shrink-0 bg-white/20 p-1 rounded-full" />
+                )}
+                <div>
+                  <h4 className="font-black text-sm">
+                    {bonToast.type === 'success' 
+                      ? (lang === 'fr' ? 'Opération réussie !' : 'تمت العملية بنجاح !') 
+                      : (lang === 'fr' ? 'Attention / Erreur' : 'تنبيه / خطأ')}
+                  </h4>
+                  <p className="text-xs font-semibold text-white/95 mt-0.5">
+                    {bonToast.message}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {bonToast.type === 'success' && (
+                  <button
+                    type="button"
+                    onClick={() => { setActiveSubTab('historique'); playBip(800, 0.05); }}
+                    className="px-3 py-1.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-lg text-xs font-black shadow-sm transition-all"
+                  >
+                    {lang === 'fr' ? "Voir l'Historique →" : "عرض السجل →"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setBonToast(null)}
+                  className="p-1 hover:bg-white/20 rounded-lg transition-colors text-white font-black text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* CARBON COPY PRINTABLE RECEIPT CONTAINER */}
             <div 
               id="printable-carbon-copy"
@@ -6197,7 +6247,6 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       <div className="flex items-center gap-1.5 justify-between sm:justify-start">
                         <span className="min-w-[70px]">Vendeur :</span>
                         <select
-                          required
                           value={bonNomVendeur}
                           onChange={(e) => {
                             setBonNomVendeur(e.target.value);
@@ -6631,7 +6680,6 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                           </label>
                           <input
                             type="text"
-                            required={bonType !== 'livraison'}
                             placeholder="................................................................................................"
                             value={bonChefSecteur}
                             onChange={(e) => setBonChefSecteur(e.target.value)}
@@ -7258,8 +7306,13 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
               <button
                 type="button"
                 onClick={() => {
-                  const submitBtn = document.getElementById('hidden-bon-submit');
-                  if (submitBtn) submitBtn.click();
+                  try {
+                    handleSaveBon();
+                  } catch (err) {
+                    console.error("Error saving bon:", err);
+                    const submitBtn = document.getElementById('hidden-bon-submit');
+                    if (submitBtn) submitBtn.click();
+                  }
                 }}
                 className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow"
               >
