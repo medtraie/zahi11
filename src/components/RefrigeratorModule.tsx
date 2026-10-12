@@ -539,10 +539,21 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
   const [fridges, setFridges] = useState<Refrigerator[]>(() => {
     try {
       const saved = localStorage.getItem('zahi_refrigerators');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const seen = new Set<string>();
+          return parsed.filter((f: Refrigerator) => {
+            const s = (f.serialNumber || '').trim().toUpperCase();
+            if (!s || seen.has(s)) return false;
+            seen.add(s);
+            return true;
+          });
+        }
+      }
     } catch {}
 
-    return [
+    const initialList: Refrigerator[] = [
       {
         id: 'REF-ZH-7501',
         serialNumber: 'ZAHI-CF-750109',
@@ -984,6 +995,14 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
         gps: { lat: 27.1450, lng: -13.1900, city: 'Laâyoune', address: 'Avenue Makkah, Laâyoune' }
       }
     ];
+
+    const seenInit = new Set<string>();
+    return initialList.filter(f => {
+      const s = (f.serialNumber || '').trim().toUpperCase();
+      if (!s || seenInit.has(s)) return false;
+      seenInit.add(s);
+      return true;
+    });
   });
 
   // Maintenance Records State
@@ -1147,23 +1166,84 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
     return String(Math.floor(27000 + Math.random() * 70000)).padStart(8, '0');
   });
   const [bonApRows, setBonApRows] = useState<string[]>(() => {
+    const seen = new Set<string>();
     const casaAp = fridges.filter(f => f.status === 'stock' && (f.depot || '').toLowerCase().includes('casablanca') && (f.type === 'chest' || f.type === 'AP'));
     const rows = Array(10).fill('');
-    casaAp.slice(0, 10).forEach((f, idx) => { rows[idx] = f.serialNumber; });
+    let idx = 0;
+    casaAp.forEach(f => {
+      const s = (f.serialNumber || '').trim().toUpperCase();
+      if (s && !seen.has(s) && idx < 10) {
+        seen.add(s);
+        rows[idx++] = s;
+      }
+    });
     return rows;
   });
   const [bonAgRows, setBonAgRows] = useState<string[]>(() => {
+    const seen = new Set<string>();
     const casaAg = fridges.filter(f => f.status === 'stock' && (f.depot || '').toLowerCase().includes('casablanca') && (f.type === 'upright' || f.type === 'AG'));
     const rows = Array(10).fill('');
-    casaAg.slice(0, 10).forEach((f, idx) => { rows[idx] = f.serialNumber; });
+    let idx = 0;
+    casaAg.forEach(f => {
+      const s = (f.serialNumber || '').trim().toUpperCase();
+      if (s && !seen.has(s) && idx < 10) {
+        seen.add(s);
+        rows[idx++] = s;
+      }
+    });
     return rows;
   });
   const [bonAsRows, setBonAsRows] = useState<string[]>(() => {
+    const seen = new Set<string>();
     const casaAs = fridges.filter(f => f.status === 'stock' && (f.depot || '').toLowerCase().includes('casablanca') && f.type === 'AS');
     const rows = Array(10).fill('');
-    casaAs.slice(0, 10).forEach((f, idx) => { rows[idx] = f.serialNumber; });
+    let idx = 0;
+    casaAs.forEach(f => {
+      const s = (f.serialNumber || '').trim().toUpperCase();
+      if (s && !seen.has(s) && idx < 10) {
+        seen.add(s);
+        rows[idx++] = s;
+      }
+    });
     return rows;
   });
+
+  // Prevent duplicate serial numbers across the entire table
+  const handleUpdateBonRow = (category: 'AP' | 'AG' | 'AS', index: number, rawVal: string) => {
+    const val = rawVal.trim().toUpperCase();
+    if (val) {
+      // Check if this serial is already anywhere else in the bon table
+      const isDuplicate = 
+        bonApRows.some((s, idx) => !(category === 'AP' && idx === index) && s.trim().toUpperCase() === val) ||
+        bonAgRows.some((s, idx) => !(category === 'AG' && idx === index) && s.trim().toUpperCase() === val) ||
+        bonAsRows.some((s, idx) => !(category === 'AS' && idx === index) && s.trim().toUpperCase() === val);
+
+      if (isDuplicate) {
+        playBip(400, 0.25);
+        setBonToast({
+          message: lang === 'fr'
+            ? `⚠️ Le congélateur N° "${val}" est déjà présent dans le tableau ! Impossible de sélectionner le même congélateur deux fois.`
+            : `⚠️ الثلاجة رقم "${val}" مسجلة مسبقاً في هذا الإذن! لا يمكن تكرار نفس الرقم التسلسلي.`,
+          type: 'error'
+        });
+        return;
+      }
+    }
+
+    if (category === 'AP') {
+      const updated = [...bonApRows];
+      updated[index] = val;
+      setBonApRows(updated);
+    } else if (category === 'AG') {
+      const updated = [...bonAgRows];
+      updated[index] = val;
+      setBonAgRows(updated);
+    } else {
+      const updated = [...bonAsRows];
+      updated[index] = val;
+      setBonAsRows(updated);
+    }
+  };
   const [bonDepot, setBonDepot] = useState('Casablanca');
 
   // Fields specifically for Bon de Prise en Charge, Décharge & Contrat de Dépôt (matching photo form)
@@ -6747,18 +6827,53 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                   {/* QUICK LOAD FROM CASABLANCA STOCK OR HISTORIQUE DES BONS FOR BON D'ENTRÉE */}
                   {bonType === 'entry' && (() => {
                     const casaFridges = fridges.filter(f => f.status === 'stock' && (f.depot || '').toLowerCase().includes('casablanca'));
-                    const casaAp = casaFridges.filter(f => f.type === 'chest' || f.type === 'AP');
-                    const casaAg = casaFridges.filter(f => f.type === 'upright' || f.type === 'AG');
-                    const casaAs = casaFridges.filter(f => f.type === 'AS');
+                    
+                    // Deduplicate Casablanca fridges strictly by serial number so no fridge can appear twice
+                    const seenCasaSerials = new Set<string>();
+                    const uniqueCasaFridges = casaFridges.filter(f => {
+                      const norm = (f.serialNumber || '').trim().toUpperCase();
+                      if (!norm || seenCasaSerials.has(norm)) return false;
+                      seenCasaSerials.add(norm);
+                      return true;
+                    });
+
+                    const casaAp = uniqueCasaFridges.filter(f => f.type === 'chest' || f.type === 'AP');
+                    const casaAg = uniqueCasaFridges.filter(f => f.type === 'upright' || f.type === 'AG');
+                    const casaAs = uniqueCasaFridges.filter(f => f.type === 'AS');
 
                     const handleLoadCasaFridges = () => {
                       const newAp = Array(10).fill('');
                       const newAg = Array(10).fill('');
                       const newAs = Array(10).fill('');
 
-                      casaAp.slice(0, 10).forEach((f, idx) => { newAp[idx] = f.serialNumber; });
-                      casaAg.slice(0, 10).forEach((f, idx) => { newAg[idx] = f.serialNumber; });
-                      casaAs.slice(0, 10).forEach((f, idx) => { newAs[idx] = f.serialNumber; });
+                      const loadedSerials = new Set<string>();
+
+                      let apCount = 0;
+                      casaAp.forEach(f => {
+                        const s = f.serialNumber.trim().toUpperCase();
+                        if (s && !loadedSerials.has(s) && apCount < 10) {
+                          newAp[apCount++] = s;
+                          loadedSerials.add(s);
+                        }
+                      });
+
+                      let agCount = 0;
+                      casaAg.forEach(f => {
+                        const s = f.serialNumber.trim().toUpperCase();
+                        if (s && !loadedSerials.has(s) && agCount < 10) {
+                          newAg[agCount++] = s;
+                          loadedSerials.add(s);
+                        }
+                      });
+
+                      let asCount = 0;
+                      casaAs.forEach(f => {
+                        const s = f.serialNumber.trim().toUpperCase();
+                        if (s && !loadedSerials.has(s) && asCount < 10) {
+                          newAs[asCount++] = s;
+                          loadedSerials.add(s);
+                        }
+                      });
 
                       setBonApRows(newAp);
                       setBonAgRows(newAg);
@@ -6766,8 +6881,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       playBip(1100, 0.08);
                       setBonToast({
                         message: lang === 'fr' 
-                          ? `7 congélateurs de Casablanca chargés dans le tableau (AP: ${Math.min(3, casaAp.length)}, AG: ${Math.min(2, casaAg.length)}, AS: ${Math.min(2, casaAs.length)}) !`
-                          : `تم تحميل ثلاجات كازابلانكا في الجدول بنجاح!`,
+                          ? `${loadedSerials.size} congélateurs uniques chargés dans le tableau (AP: ${apCount}, AG: ${agCount}, AS: ${asCount}) sans doublons !`
+                          : `تم تحميل ${loadedSerials.size} ثلاجة فريدة في الجدول بدون أي تكرار (AP: ${apCount}, AG: ${agCount}, AS: ${asCount})!`,
                         type: 'success'
                       });
                     };
@@ -6778,11 +6893,33 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       if (bonToLoad) {
                         loadSavedBon(bonToLoad);
                         setBonType('entry'); // maintain bonType as entry
+                        
+                        // Enforce deduplication on rows loaded from history
+                        const seen = new Set<string>();
+                        setBonApRows(prev => prev.map(s => {
+                          const u = s.trim().toUpperCase();
+                          if (!u || seen.has(u)) return '';
+                          seen.add(u);
+                          return u;
+                        }));
+                        setBonAgRows(prev => prev.map(s => {
+                          const u = s.trim().toUpperCase();
+                          if (!u || seen.has(u)) return '';
+                          seen.add(u);
+                          return u;
+                        }));
+                        setBonAsRows(prev => prev.map(s => {
+                          const u = s.trim().toUpperCase();
+                          if (!u || seen.has(u)) return '';
+                          seen.add(u);
+                          return u;
+                        }));
+
                         playBip(1200, 0.08);
                         setBonToast({
                           message: lang === 'fr' 
-                            ? `Données et congélateurs chargés depuis le Bon N° ${bonToLoad.bonNo} dans l'Historique !`
-                            : `تم تحميل الثلاجات والبيانات من الإذن رقم ${bonToLoad.bonNo} من سجل الأذونات بنجاح!`,
+                            ? `Données et congélateurs uniques chargés depuis le Bon N° ${bonToLoad.bonNo} !`
+                            : `تم تحميل الثلاجات الفريدة من الإذن رقم ${bonToLoad.bonNo} بنجاح دون تكرار!`,
                           type: 'success'
                         });
                       }
@@ -6798,7 +6935,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                 {lang === 'fr' ? 'Stock disponible à Dépôt Casablanca :' : 'المخزون المتوفر بمستودع الدار البيضاء :'}
                               </span>
                               <span className="text-[11px] text-blue-700 dark:text-blue-300 font-semibold">
-                                AP: <b>{casaAp.length}</b> | AG: <b>{casaAg.length}</b> | AS: <b>{casaAs.length}</b> (Total: <b>{casaFridges.length}</b>)
+                                AP: <b>{casaAp.length}</b> | AG: <b>{casaAg.length}</b> | AS: <b>{casaAs.length}</b> (Total: <b>{uniqueCasaFridges.length}</b>)
                               </span>
                             </div>
                           </div>
@@ -6806,7 +6943,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                           <div className="flex flex-wrap items-center gap-2">
                             <button
                               type="button"
-                              disabled={casaFridges.length === 0}
+                              disabled={uniqueCasaFridges.length === 0}
                               onClick={handleLoadCasaFridges}
                               className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg transition-all shadow-sm flex items-center gap-1.5"
                             >
@@ -6876,28 +7013,43 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                     );
                   })()}
 
-                  {/* HTML5 DATALISTS FOR RAPID SELECTION */}
-                  <datalist id="bon-casa-ap-list">
-                    {fridges
-                      .filter(f => f.status === 'stock' && (f.type === 'chest' || f.type === 'AP') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
-                      .map(f => (
-                        <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
-                      ))}
-                  </datalist>
-                  <datalist id="bon-casa-ag-list">
-                    {fridges
-                      .filter(f => f.status === 'stock' && (f.type === 'upright' || f.type === 'AG') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
-                      .map(f => (
-                        <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
-                      ))}
-                  </datalist>
-                  <datalist id="bon-casa-as-list">
-                    {fridges
-                      .filter(f => f.status === 'stock' && f.type === 'AS' && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
-                      .map(f => (
-                        <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
-                      ))}
-                  </datalist>
+                  {/* HTML5 DATALISTS - FILTERING OUT ALREADY USED SERIALS TO PREVENT DUPLICATES */}
+                  {(() => {
+                    const usedSerialsSet = new Set([
+                      ...bonApRows.map(s => s.trim().toUpperCase()),
+                      ...bonAgRows.map(s => s.trim().toUpperCase()),
+                      ...bonAsRows.map(s => s.trim().toUpperCase())
+                    ].filter(Boolean));
+
+                    return (
+                      <>
+                        <datalist id="bon-casa-ap-list">
+                          {fridges
+                            .filter(f => f.status === 'stock' && (f.type === 'chest' || f.type === 'AP') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
+                            .filter(f => !usedSerialsSet.has((f.serialNumber || '').trim().toUpperCase()))
+                            .map(f => (
+                              <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
+                            ))}
+                        </datalist>
+                        <datalist id="bon-casa-ag-list">
+                          {fridges
+                            .filter(f => f.status === 'stock' && (f.type === 'upright' || f.type === 'AG') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
+                            .filter(f => !usedSerialsSet.has((f.serialNumber || '').trim().toUpperCase()))
+                            .map(f => (
+                              <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
+                            ))}
+                        </datalist>
+                        <datalist id="bon-casa-as-list">
+                          {fridges
+                            .filter(f => f.status === 'stock' && f.type === 'AS' && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
+                            .filter(f => !usedSerialsSet.has((f.serialNumber || '').trim().toUpperCase()))
+                            .map(f => (
+                              <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
+                            ))}
+                        </datalist>
+                      </>
+                    );
+                  })()}
 
                   {/* CORE TABLE: AP VS AG VS AS */}
                   <div className="border-2 border-slate-900 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900 mt-2 shadow-sm">
@@ -6936,21 +7088,13 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     list="bon-casa-ap-list"
                                     placeholder="............"
                                     value={bonApRows[apIdx1] || ''}
-                                    onChange={(e) => {
-                                      const updated = [...bonApRows];
-                                      updated[apIdx1] = e.target.value.toUpperCase();
-                                      setBonApRows(updated);
-                                    }}
+                                    onChange={(e) => handleUpdateBonRow('AP', apIdx1, e.target.value)}
                                     className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
                                   {bonApRows[apIdx1] ? (
                                     <button
                                       type="button"
-                                      onClick={() => {
-                                        const updated = [...bonApRows];
-                                        updated[apIdx1] = '';
-                                        setBonApRows(updated);
-                                      }}
+                                      onClick={() => handleUpdateBonRow('AP', apIdx1, '')}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
                                       title="Effacer"
                                     >
@@ -6960,9 +7104,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const updated = [...bonApRows];
-                                        updated[apIdx1] = `ZAHI-CF-${Math.floor(100000 + Math.random() * 900000)}`;
-                                        setBonApRows(updated);
+                                        const rand = `ZAHI-CF-${Math.floor(100000 + Math.random() * 900000)}`;
+                                        handleUpdateBonRow('AP', apIdx1, rand);
                                         playBip(900, 0.05);
                                       }}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
@@ -6982,21 +7125,13 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     list="bon-casa-ap-list"
                                     placeholder="............"
                                     value={bonApRows[apIdx2] || ''}
-                                    onChange={(e) => {
-                                      const updated = [...bonApRows];
-                                      updated[apIdx2] = e.target.value.toUpperCase();
-                                      setBonApRows(updated);
-                                    }}
+                                    onChange={(e) => handleUpdateBonRow('AP', apIdx2, e.target.value)}
                                     className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
                                   {bonApRows[apIdx2] ? (
                                     <button
                                       type="button"
-                                      onClick={() => {
-                                        const updated = [...bonApRows];
-                                        updated[apIdx2] = '';
-                                        setBonApRows(updated);
-                                      }}
+                                      onClick={() => handleUpdateBonRow('AP', apIdx2, '')}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
                                       title="Effacer"
                                     >
@@ -7006,9 +7141,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const updated = [...bonApRows];
-                                        updated[apIdx2] = `ZAHI-CF-${Math.floor(100000 + Math.random() * 900000)}`;
-                                        setBonApRows(updated);
+                                        const rand = `ZAHI-CF-${Math.floor(100000 + Math.random() * 900000)}`;
+                                        handleUpdateBonRow('AP', apIdx2, rand);
                                         playBip(900, 0.05);
                                       }}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
@@ -7028,21 +7162,13 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     list="bon-casa-ag-list"
                                     placeholder="............"
                                     value={bonAgRows[agIdx1] || ''}
-                                    onChange={(e) => {
-                                      const updated = [...bonAgRows];
-                                      updated[agIdx1] = e.target.value.toUpperCase();
-                                      setBonAgRows(updated);
-                                    }}
+                                    onChange={(e) => handleUpdateBonRow('AG', agIdx1, e.target.value)}
                                     className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
                                   {bonAgRows[agIdx1] ? (
                                     <button
                                       type="button"
-                                      onClick={() => {
-                                        const updated = [...bonAgRows];
-                                        updated[agIdx1] = '';
-                                        setBonAgRows(updated);
-                                      }}
+                                      onClick={() => handleUpdateBonRow('AG', agIdx1, '')}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
                                       title="Effacer"
                                     >
@@ -7052,9 +7178,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const updated = [...bonAgRows];
-                                        updated[agIdx1] = `ZAHI-VD-${Math.floor(100000 + Math.random() * 900000)}`;
-                                        setBonAgRows(updated);
+                                        const rand = `ZAHI-VD-${Math.floor(100000 + Math.random() * 900000)}`;
+                                        handleUpdateBonRow('AG', agIdx1, rand);
                                         playBip(900, 0.05);
                                       }}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
@@ -7074,21 +7199,13 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     list="bon-casa-ag-list"
                                     placeholder="............"
                                     value={bonAgRows[agIdx2] || ''}
-                                    onChange={(e) => {
-                                      const updated = [...bonAgRows];
-                                      updated[agIdx2] = e.target.value.toUpperCase();
-                                      setBonAgRows(updated);
-                                    }}
+                                    onChange={(e) => handleUpdateBonRow('AG', agIdx2, e.target.value)}
                                     className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
                                   {bonAgRows[agIdx2] ? (
                                     <button
                                       type="button"
-                                      onClick={() => {
-                                        const updated = [...bonAgRows];
-                                        updated[agIdx2] = '';
-                                        setBonAgRows(updated);
-                                      }}
+                                      onClick={() => handleUpdateBonRow('AG', agIdx2, '')}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
                                       title="Effacer"
                                     >
@@ -7098,9 +7215,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const updated = [...bonAgRows];
-                                        updated[agIdx2] = `ZAHI-VD-${Math.floor(100000 + Math.random() * 900000)}`;
-                                        setBonAgRows(updated);
+                                        const rand = `ZAHI-VD-${Math.floor(100000 + Math.random() * 900000)}`;
+                                        handleUpdateBonRow('AG', agIdx2, rand);
                                         playBip(900, 0.05);
                                       }}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
@@ -7120,21 +7236,13 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     list="bon-casa-as-list"
                                     placeholder="............"
                                     value={bonAsRows[asIdx1] || ''}
-                                    onChange={(e) => {
-                                      const updated = [...bonAsRows];
-                                      updated[asIdx1] = e.target.value.toUpperCase();
-                                      setBonAsRows(updated);
-                                    }}
+                                    onChange={(e) => handleUpdateBonRow('AS', asIdx1, e.target.value)}
                                     className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
                                   {bonAsRows[asIdx1] ? (
                                     <button
                                       type="button"
-                                      onClick={() => {
-                                        const updated = [...bonAsRows];
-                                        updated[asIdx1] = '';
-                                        setBonAsRows(updated);
-                                      }}
+                                      onClick={() => handleUpdateBonRow('AS', asIdx1, '')}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
                                       title="Effacer"
                                     >
@@ -7144,9 +7252,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const updated = [...bonAsRows];
-                                        updated[asIdx1] = `ZAHI-AS-${Math.floor(100000 + Math.random() * 900000)}`;
-                                        setBonAsRows(updated);
+                                        const rand = `ZAHI-AS-${Math.floor(100000 + Math.random() * 900000)}`;
+                                        handleUpdateBonRow('AS', asIdx1, rand);
                                         playBip(900, 0.05);
                                       }}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
@@ -7166,21 +7273,13 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     list="bon-casa-as-list"
                                     placeholder="............"
                                     value={bonAsRows[asIdx2] || ''}
-                                    onChange={(e) => {
-                                      const updated = [...bonAsRows];
-                                      updated[asIdx2] = e.target.value.toUpperCase();
-                                      setBonAsRows(updated);
-                                    }}
+                                    onChange={(e) => handleUpdateBonRow('AS', asIdx2, e.target.value)}
                                     className="w-full bg-white dark:bg-slate-900 text-center font-mono font-black text-slate-950 dark:text-white border-b border-dashed border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:bg-amber-50/60 dark:focus:bg-slate-800 py-1.5 px-1 text-xs focus:outline-none transition-all tracking-tight"
                                   />
                                   {bonAsRows[asIdx2] ? (
                                     <button
                                       type="button"
-                                      onClick={() => {
-                                        const updated = [...bonAsRows];
-                                        updated[asIdx2] = '';
-                                        setBonAsRows(updated);
-                                      }}
+                                      onClick={() => handleUpdateBonRow('AS', asIdx2, '')}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 hover:text-rose-600 text-slate-400 text-xs font-black transition-opacity px-0.5"
                                       title="Effacer"
                                     >
@@ -7190,9 +7289,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const updated = [...bonAsRows];
-                                        updated[asIdx2] = `ZAHI-AS-${Math.floor(100000 + Math.random() * 900000)}`;
-                                        setBonAsRows(updated);
+                                        const rand = `ZAHI-AS-${Math.floor(100000 + Math.random() * 900000)}`;
+                                        handleUpdateBonRow('AS', asIdx2, rand);
                                         playBip(900, 0.05);
                                       }}
                                       className="no-print absolute right-1 opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-blue-600 font-bold px-0.5"
