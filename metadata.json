@@ -1,0 +1,6 @@
+{
+  "name": "Zahi Ice Stock",
+  "description": "Système complet de gestion de stock, de transfert logistique et de distribution pour la société de glaces Zahi, incluant un simulateur mobile pour les chauffeurs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

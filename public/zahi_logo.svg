@@ -1,0 +1,32 @@
+<svg viewBox="0 0 500 230" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldOuterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5B842" />
+      <stop offset="25%" stop-color="#D48C28" />
+      <stop offset="50%" stop-color="#9E5B10" />
+      <stop offset="75%" stop-color="#D48C28" />
+      <stop offset="100%" stop-color="#F5B842" />
+    </linearGradient>
+    <radialGradient id="chocBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#5E2A1B" />
+      <stop offset="70%" stop-color="#3D180F" />
+      <stop offset="100%" stop-color="#2A0F09" />
+    </radialGradient>
+    <filter id="shadow3d" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="3" dy="4" stdDeviation="1" flood-color="#180A05" flood-opacity="0.9" />
+    </filter>
+  </defs>
+  <path d="M 20 135 L 75 100 L 75 165 L 20 135 Z" fill="#7A3D06" />
+  <path d="M 5 110 L 75 90 L 75 175 L 5 155 L 25 132.5 Z" fill="url(#goldOuterGrad)" />
+  <path d="M 480 135 L 425 100 L 425 165 L 480 135 Z" fill="#7A3D06" />
+  <path d="M 495 110 L 425 90 L 425 175 L 495 155 L 475 132.5 Z" fill="url(#goldOuterGrad)" />
+  <ellipse cx="250" cy="115" rx="200" ry="105" fill="url(#goldOuterGrad)" stroke="#593108" stroke-width="3" />
+  <ellipse cx="250" cy="115" rx="185" ry="92" fill="url(#chocBg)" stroke="#7A420E" stroke-width="4" />
+  <g filter="url(#shadow3d)">
+    <text x="125" y="150" font-family="Arial Black, Impact, sans-serif" font-size="115" font-weight="900" fill="#FFFFFF" stroke="#2A0F09" stroke-width="6" stroke-linejoin="round">Z</text>
+    <text x="195" y="145" font-family="Arial Black, Impact, sans-serif" font-size="105" font-weight="900" fill="#FFFFFF" stroke="#2A0F09" stroke-width="6" stroke-linejoin="round">A</text>
+    <text x="270" y="145" font-family="Arial Black, Impact, sans-serif" font-size="105" font-weight="900" fill="#FFFFFF" stroke="#2A0F09" stroke-width="6" stroke-linejoin="round">H</text>
+    <text x="345" y="148" font-family="Arial Black, Impact, sans-serif" font-size="110" font-weight="900" fill="#FFFFFF" stroke="#2A0F09" stroke-width="6" stroke-linejoin="round">I</text>
+    <text x="250" y="188" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="38" font-weight="900" letter-spacing="4" fill="#FFFFFF" stroke="#2A0F09" stroke-width="4" stroke-linejoin="round">GLACES</text>
+  </g>
+</svg>

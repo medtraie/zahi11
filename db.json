@@ -1,0 +1,2752 @@
+{
+  "products": [
+    {
+      "id": "prod-01",
+      "name": "TWINNY Grenadine lait",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567011",
+      "image": "#EF4444",
+      "createdAt": "2026-06-01",
+      "expiryDays": 2,
+      "unitPriceCost": 1.5,
+      "unitPriceSell": 3,
+      "tempRequired": -18,
+      "cartonsPerPalette": 100
+    },
+    {
+      "id": "prod-02",
+      "name": "TWINNY Ananas Coco",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567028",
+      "image": "#FBBF24",
+      "createdAt": "2026-06-01",
+      "expiryDays": 365,
+      "unitPriceCost": 1.5,
+      "unitPriceSell": 3,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-03",
+      "name": "Prestige Chocolat Caramel",
+      "category": "GAMME PREMIUM",
+      "barcode": "6111234567035",
+      "image": "#78350F",
+      "createdAt": "2026-06-05",
+      "expiryDays": 270,
+      "unitPriceCost": 2.5,
+      "unitPriceSell": 5.5,
+      "tempRequired": -20
+    },
+    {
+      "id": "prod-04",
+      "name": "Fraise Melba Gourmande",
+      "category": "GAMME GOURMET",
+      "barcode": "6111234567042",
+      "image": "#F472B6",
+      "createdAt": "2026-05-20",
+      "expiryDays": 365,
+      "unitPriceCost": 2,
+      "unitPriceSell": 4.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-05",
+      "name": "Mystique Magic Bubblegum",
+      "category": "GAMME MAGICIEN",
+      "barcode": "6111234567059",
+      "image": "#8B5CF6",
+      "createdAt": "2026-06-10",
+      "expiryDays": 180,
+      "unitPriceCost": 1.8,
+      "unitPriceSell": 4,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-06",
+      "name": "CAPITANO Crème de mangue",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567066",
+      "image": "#F59E0B",
+      "createdAt": "2026-06-12",
+      "expiryDays": 365,
+      "unitPriceCost": 2,
+      "unitPriceSell": 4.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-07",
+      "name": "CAPITANO Vanille Chocolat",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567073",
+      "image": "#7C2D12",
+      "createdAt": "2026-06-12",
+      "expiryDays": 365,
+      "unitPriceCost": 2,
+      "unitPriceSell": 4.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-08",
+      "name": "TWISTY Morceaux de Fraise",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567080",
+      "image": "#F43F5E",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.5,
+      "unitPriceSell": 3.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-09",
+      "name": "MINI GARCIA Chocolat",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567097",
+      "image": "#4B5563",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.2,
+      "unitPriceSell": 2.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-10",
+      "name": "BROCHETTE Fraise Citron",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567103",
+      "image": "#EC4899",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.2,
+      "unitPriceSell": 2.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-11",
+      "name": "DELICIO Vanille Fraise",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567110",
+      "image": "#FB7185",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.6,
+      "unitPriceSell": 3.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-12",
+      "name": "P'TIPO Vanille Chocolat",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567127",
+      "image": "#9A3412",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.5,
+      "unitPriceSell": 3,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-13",
+      "name": "POT FRIO Coulis Fraise",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567134",
+      "image": "#E11D48",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.8,
+      "unitPriceSell": 4,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-14",
+      "name": "GOLDEN GLOBE Yaourt",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567141",
+      "image": "#0284C7",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 2,
+      "unitPriceSell": 4.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-29",
+      "name": "CAPITANO Enrobé Chocolat",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567295",
+      "image": "#3B2314",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 2.2,
+      "unitPriceSell": 5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-30",
+      "name": "CAPITANO Framboise",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567301",
+      "image": "#EC4899",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 2.1,
+      "unitPriceSell": 4.8,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-31",
+      "name": "DELICIO Chocolat",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567318",
+      "image": "#451A03",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.6,
+      "unitPriceSell": 3.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-32",
+      "name": "MINI GARCIA Vanille Fraise Coco",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567325",
+      "image": "#F3E8FF",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.2,
+      "unitPriceSell": 2.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-33",
+      "name": "P'TIPO Vanille Fraise",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567332",
+      "image": "#FCE7F3",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.5,
+      "unitPriceSell": 3,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-34",
+      "name": "POT FRIO Coulis Chocolat",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567349",
+      "image": "#78350F",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.8,
+      "unitPriceSell": 4,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-35",
+      "name": "POT FRIO Coulis Citron",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567356",
+      "image": "#EAB308",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 1.8,
+      "unitPriceSell": 4,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-36",
+      "name": "GOLDEN GLOBE Fraise",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567363",
+      "image": "#F43F5E",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 2,
+      "unitPriceSell": 4.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-37",
+      "name": "GOLDEN GLOBE Chocolat",
+      "category": "GAMME CLASSIQUE",
+      "barcode": "6111234567370",
+      "image": "#4B2E1E",
+      "createdAt": "2026-06-15",
+      "expiryDays": 365,
+      "unitPriceCost": 2,
+      "unitPriceSell": 4.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-15",
+      "name": "PANDA Vanille Chocolat 1L",
+      "category": "GAMME GOURMET",
+      "barcode": "6111234567196",
+      "image": "#0F172A",
+      "createdAt": "2026-06-10",
+      "expiryDays": 365,
+      "unitPriceCost": 8,
+      "unitPriceSell": 18,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-16",
+      "name": "OCEANO Vanille Fraise 1L",
+      "category": "GAMME GOURMET",
+      "barcode": "6111234567202",
+      "image": "#DB2777",
+      "createdAt": "2026-06-10",
+      "expiryDays": 365,
+      "unitPriceCost": 9,
+      "unitPriceSell": 20,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-38",
+      "name": "PANDA Nougat Noisettes 1L",
+      "category": "GAMME GOURMET",
+      "barcode": "6111234567387",
+      "image": "#D97706",
+      "createdAt": "2026-06-10",
+      "expiryDays": 365,
+      "unitPriceCost": 8.5,
+      "unitPriceSell": 19,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-39",
+      "name": "PANDA Vanille Fraise 1L",
+      "category": "GAMME GOURMET",
+      "barcode": "6111234567394",
+      "image": "#EC4899",
+      "createdAt": "2026-06-10",
+      "expiryDays": 365,
+      "unitPriceCost": 8,
+      "unitPriceSell": 18,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-40",
+      "name": "OCEANO Vanille Chocolat 1L",
+      "category": "GAMME GOURMET",
+      "barcode": "6111234567400",
+      "image": "#451A03",
+      "createdAt": "2026-06-10",
+      "expiryDays": 365,
+      "unitPriceCost": 9,
+      "unitPriceSell": 20,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-41",
+      "name": "OCEANO Vanille Citron 1L",
+      "category": "GAMME GOURMET",
+      "barcode": "6111234567417",
+      "image": "#EAB308",
+      "createdAt": "2026-06-10",
+      "expiryDays": 365,
+      "unitPriceCost": 9,
+      "unitPriceSell": 20,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-17",
+      "name": "CROQUANTY Vanille enrobée",
+      "category": "GAMME PREMIUM",
+      "barcode": "6111234567165",
+      "image": "#D97706",
+      "createdAt": "2026-06-10",
+      "expiryDays": 365,
+      "unitPriceCost": 2.5,
+      "unitPriceSell": 5.5,
+      "tempRequired": -20
+    },
+    {
+      "id": "prod-18",
+      "name": "Prestige Vanille Fraise",
+      "category": "GAMME PREMIUM",
+      "barcode": "6111234567158",
+      "image": "#BE123C",
+      "createdAt": "2026-06-10",
+      "expiryDays": 365,
+      "unitPriceCost": 2.5,
+      "unitPriceSell": 5.5,
+      "tempRequired": -20
+    },
+    {
+      "id": "prod-19",
+      "name": "OMEGA Biscuit Caramel",
+      "category": "GAMME PREMIUM",
+      "barcode": "6111234567172",
+      "image": "#1E3A8A",
+      "createdAt": "2026-06-10",
+      "expiryDays": 365,
+      "unitPriceCost": 2.8,
+      "unitPriceSell": 6,
+      "tempRequired": -20
+    },
+    {
+      "id": "prod-20",
+      "name": "POT FLEURY Fraise Citron",
+      "category": "GAMME PREMIUM",
+      "barcode": "6111234567189",
+      "image": "#EC4899",
+      "createdAt": "2026-06-10",
+      "expiryDays": 365,
+      "unitPriceCost": 2.2,
+      "unitPriceSell": 5,
+      "tempRequired": -20
+    },
+    {
+      "id": "prod-21",
+      "name": "ALDO Cornet Vanille Fraise",
+      "category": "GAMME MAGICIEN",
+      "barcode": "6111234567219",
+      "image": "#F43F5E",
+      "createdAt": "2026-06-11",
+      "expiryDays": 365,
+      "unitPriceCost": 1.8,
+      "unitPriceSell": 4,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-22",
+      "name": "ICE FRUITY Fraise Orange",
+      "category": "GAMME MAGICIEN",
+      "barcode": "6111234567226",
+      "image": "#F97316",
+      "createdAt": "2026-06-11",
+      "expiryDays": 365,
+      "unitPriceCost": 1,
+      "unitPriceSell": 2,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-23",
+      "name": "ALADINO Ananas Coco",
+      "category": "GAMME MAGICIEN",
+      "barcode": "6111234567233",
+      "image": "#EAB308",
+      "createdAt": "2026-06-11",
+      "expiryDays": 365,
+      "unitPriceCost": 1.5,
+      "unitPriceSell": 3.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-24",
+      "name": "POUCHY Bonbons",
+      "category": "GAMME MAGICIEN",
+      "barcode": "6111234567240",
+      "image": "#A855F7",
+      "createdAt": "2026-06-11",
+      "expiryDays": 365,
+      "unitPriceCost": 1.2,
+      "unitPriceSell": 2.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-25",
+      "name": "POPEYE Citron Fraise",
+      "category": "GAMME MAGICIEN",
+      "barcode": "6111234567257",
+      "image": "#22C55E",
+      "createdAt": "2026-06-11",
+      "expiryDays": 365,
+      "unitPriceCost": 1.2,
+      "unitPriceSell": 2.5,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-26",
+      "name": "PASTEK Melon Pastèque",
+      "category": "GAMME MAGICIEN",
+      "barcode": "6111234567264",
+      "image": "#EF4444",
+      "createdAt": "2026-06-11",
+      "expiryDays": 365,
+      "unitPriceCost": 1.5,
+      "unitPriceSell": 3,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-27",
+      "name": "POMMY Vanille Pomme",
+      "category": "GAMME MAGICIEN",
+      "barcode": "6111234567271",
+      "image": "#84CC16",
+      "createdAt": "2026-06-11",
+      "expiryDays": 365,
+      "unitPriceCost": 1.5,
+      "unitPriceSell": 3,
+      "tempRequired": -18
+    },
+    {
+      "id": "prod-28",
+      "name": "PIRATOS Vanille Chocolat",
+      "category": "GAMME MAGICIEN",
+      "barcode": "6111234567288",
+      "image": "#78350F",
+      "createdAt": "2026-06-11",
+      "expiryDays": 365,
+      "unitPriceCost": 1.6,
+      "unitPriceSell": 3.5,
+      "tempRequired": -18
+    }
+  ],
+  "batches": [
+    {
+      "id": "batch-101",
+      "batchNumber": "LOT-2026-0601-A",
+      "productId": "prod-01",
+      "productName": "TWINNY Grenadine lait",
+      "quantity": 500,
+      "quantityDamaged": 5,
+      "quantityExpired": 0,
+      "productionDate": "2026-06-01",
+      "expirationDate": "2027-06-01",
+      "status": "active",
+      "tempRegistered": -19.5
+    },
+    {
+      "id": "batch-102",
+      "batchNumber": "LOT-2026-0602-B",
+      "productId": "prod-02",
+      "productName": "TWINNY Ananas Coco",
+      "quantity": 400,
+      "quantityDamaged": 0,
+      "quantityExpired": 0,
+      "productionDate": "2026-06-02",
+      "expirationDate": "2027-06-02",
+      "status": "active",
+      "tempRegistered": -21.2
+    },
+    {
+      "id": "batch-103",
+      "batchNumber": "LOT-2026-0610-C",
+      "productId": "prod-05",
+      "productName": "Mystique Magic Bubblegum",
+      "quantity": 800,
+      "quantityDamaged": 12,
+      "quantityExpired": 0,
+      "productionDate": "2026-06-10",
+      "expirationDate": "2026-12-10",
+      "status": "active",
+      "tempRegistered": -18.2
+    }
+  ],
+  "stockPositions": [
+    {
+      "id": "sp-01",
+      "productId": "prod-01",
+      "productName": "TWINNY Grenadine lait",
+      "location": "Magasin Usine",
+      "quantity": 1500
+    },
+    {
+      "id": "sp-02",
+      "productId": "prod-02",
+      "productName": "TWINNY Ananas Coco",
+      "location": "Magasin Usine",
+      "quantity": 1200
+    },
+    {
+      "id": "sp-03",
+      "productId": "prod-03",
+      "productName": "Prestige Chocolat Caramel",
+      "location": "Magasin Usine",
+      "quantity": 800
+    },
+    {
+      "id": "sp-04",
+      "productId": "prod-04",
+      "productName": "Fraise Melba Gourmande",
+      "location": "Magasin Usine",
+      "quantity": 450
+    },
+    {
+      "id": "sp-05",
+      "productId": "prod-05",
+      "productName": "Mystique Magic Bubblegum",
+      "location": "Magasin Usine",
+      "quantity": 2000
+    },
+    {
+      "id": "sp-06",
+      "productId": "prod-01",
+      "productName": "TWINNY Grenadine lait",
+      "location": "Magasin MICZ",
+      "quantity": 300
+    },
+    {
+      "id": "sp-07",
+      "productId": "prod-02",
+      "productName": "TWINNY Ananas Coco",
+      "location": "Magasin MICZ",
+      "quantity": 150
+    },
+    {
+      "id": "sp-08",
+      "productId": "prod-01",
+      "productName": "TWINNY Grenadine lait",
+      "location": "Magasin Zone Logistique",
+      "quantity": 200
+    },
+    {
+      "id": "sp-09",
+      "productId": "prod-03",
+      "productName": "Prestige Chocolat Caramel",
+      "location": "Magasin Zone Logistique",
+      "quantity": 100
+    }
+  ],
+  "transfers": [
+    {
+      "id": "tr-001",
+      "trackingNumber": "TR-2026-101",
+      "source": "Magasin Usine",
+      "destination": "Magasin MICZ",
+      "items": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 100
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 150
+        }
+      ],
+      "status": "Received",
+      "sentAt": "2026-06-25T08:00:00Z",
+      "receivedAt": "2026-06-25T11:30:00Z",
+      "carrierName": "Transport Ghazali Truck 04",
+      "scannedCartons": 250,
+      "lossCount": 0,
+      "temperatureAlert": false,
+      "notes": "Livraison conforme."
+    },
+    {
+      "id": "tr-002",
+      "trackingNumber": "TR-2026-102",
+      "source": "Magasin MICZ",
+      "destination": "Magasin Zone Logistique",
+      "items": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 200
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 100
+        }
+      ],
+      "status": "Received",
+      "sentAt": "2026-06-26T09:00:00Z",
+      "receivedAt": "2026-06-26T14:15:00Z",
+      "carrierName": "Transport Ghazali Truck 12",
+      "scannedCartons": 300,
+      "lossCount": 0,
+      "temperatureAlert": false,
+      "notes": "Reçu et stocké correctement."
+    },
+    {
+      "id": "tr-003",
+      "trackingNumber": "TR-2026-103",
+      "source": "Magasin Zone Logistique",
+      "destination": "Dépôt Casablanca",
+      "items": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 150
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 250
+        }
+      ],
+      "status": "In Transit",
+      "sentAt": "2026-06-28T06:30:00Z",
+      "receivedAt": null,
+      "carrierName": "Transporteur Nord-Sud #33",
+      "scannedCartons": 400,
+      "lossCount": 0,
+      "temperatureAlert": false,
+      "notes": "En route vers Casablanca"
+    }
+  ],
+  "depots": {
+    "Casablanca": {
+      "name": "Casablanca",
+      "trucksCount": 33,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 400
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 250
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 180
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 300
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    },
+    "Oujda": {
+      "name": "Oujda",
+      "trucksCount": 10,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 120
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 80
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 50
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 90
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    },
+    "Tanger": {
+      "name": "Tanger",
+      "trucksCount": 5,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 120
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 80
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 50
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 90
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    },
+    "Meknès": {
+      "name": "Meknès",
+      "trucksCount": 8,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 120
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 80
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 50
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 90
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    },
+    "Marrakech": {
+      "name": "Marrakech",
+      "trucksCount": 80,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 400
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 250
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 180
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 300
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    },
+    "Agadir": {
+      "name": "Agadir",
+      "trucksCount": 7,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 120
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 80
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 50
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 90
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    },
+    "Safi": {
+      "name": "Safi",
+      "trucksCount": 5,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 120
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 80
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 50
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 90
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    },
+    "Berrechid": {
+      "name": "Berrechid",
+      "trucksCount": 5,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 120
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 80
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 50
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 90
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    },
+    "Fès": {
+      "name": "Fès",
+      "trucksCount": 12,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-04",
+          "productName": "Fraise Melba Gourmande",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-06",
+          "productName": "CAPITANO Crème de mangue",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-07",
+          "productName": "CAPITANO Vanille Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-08",
+          "productName": "TWISTY Morceaux de Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-09",
+          "productName": "MINI GARCIA Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-10",
+          "productName": "BROCHETTE Fraise Citron",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-11",
+          "productName": "DELICIO Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-12",
+          "productName": "P'TIPO Vanille Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-13",
+          "productName": "POT FRIO Coulis Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-14",
+          "productName": "GOLDEN GLOBE Yaourt",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-29",
+          "productName": "CAPITANO Enrobé Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-30",
+          "productName": "CAPITANO Framboise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-31",
+          "productName": "DELICIO Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-32",
+          "productName": "MINI GARCIA Vanille Fraise Coco",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-33",
+          "productName": "P'TIPO Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-34",
+          "productName": "POT FRIO Coulis Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-35",
+          "productName": "POT FRIO Coulis Citron",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-36",
+          "productName": "GOLDEN GLOBE Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-37",
+          "productName": "GOLDEN GLOBE Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-15",
+          "productName": "PANDA Vanille Chocolat 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-16",
+          "productName": "OCEANO Vanille Fraise 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-38",
+          "productName": "PANDA Nougat Noisettes 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-39",
+          "productName": "PANDA Vanille Fraise 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-40",
+          "productName": "OCEANO Vanille Chocolat 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-41",
+          "productName": "OCEANO Vanille Citron 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-17",
+          "productName": "CROQUANTY Vanille enrobée",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-18",
+          "productName": "Prestige Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-19",
+          "productName": "OMEGA Biscuit Caramel",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-20",
+          "productName": "POT FLEURY Fraise Citron",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-21",
+          "productName": "ALDO Cornet Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-22",
+          "productName": "ICE FRUITY Fraise Orange",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-23",
+          "productName": "ALADINO Ananas Coco",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-24",
+          "productName": "POUCHY Bonbons",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-25",
+          "productName": "POPEYE Citron Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-26",
+          "productName": "PASTEK Melon Pastèque",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-27",
+          "productName": "POMMY Vanille Pomme",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-28",
+          "productName": "PIRATOS Vanille Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-Fès-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    },
+    "Rabat": {
+      "name": "Rabat",
+      "trucksCount": 15,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-04",
+          "productName": "Fraise Melba Gourmande",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-06",
+          "productName": "CAPITANO Crème de mangue",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-07",
+          "productName": "CAPITANO Vanille Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-08",
+          "productName": "TWISTY Morceaux de Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-09",
+          "productName": "MINI GARCIA Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-10",
+          "productName": "BROCHETTE Fraise Citron",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-11",
+          "productName": "DELICIO Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-12",
+          "productName": "P'TIPO Vanille Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-13",
+          "productName": "POT FRIO Coulis Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-14",
+          "productName": "GOLDEN GLOBE Yaourt",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-29",
+          "productName": "CAPITANO Enrobé Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-30",
+          "productName": "CAPITANO Framboise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-31",
+          "productName": "DELICIO Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-32",
+          "productName": "MINI GARCIA Vanille Fraise Coco",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-33",
+          "productName": "P'TIPO Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-34",
+          "productName": "POT FRIO Coulis Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-35",
+          "productName": "POT FRIO Coulis Citron",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-36",
+          "productName": "GOLDEN GLOBE Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-37",
+          "productName": "GOLDEN GLOBE Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-15",
+          "productName": "PANDA Vanille Chocolat 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-16",
+          "productName": "OCEANO Vanille Fraise 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-38",
+          "productName": "PANDA Nougat Noisettes 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-39",
+          "productName": "PANDA Vanille Fraise 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-40",
+          "productName": "OCEANO Vanille Chocolat 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-41",
+          "productName": "OCEANO Vanille Citron 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-17",
+          "productName": "CROQUANTY Vanille enrobée",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-18",
+          "productName": "Prestige Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-19",
+          "productName": "OMEGA Biscuit Caramel",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-20",
+          "productName": "POT FLEURY Fraise Citron",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-21",
+          "productName": "ALDO Cornet Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-22",
+          "productName": "ICE FRUITY Fraise Orange",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-23",
+          "productName": "ALADINO Ananas Coco",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-24",
+          "productName": "POUCHY Bonbons",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-25",
+          "productName": "POPEYE Citron Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-26",
+          "productName": "PASTEK Melon Pastèque",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-27",
+          "productName": "POMMY Vanille Pomme",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-28",
+          "productName": "PIRATOS Vanille Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-Rabat-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    },
+    "Laâyoune": {
+      "name": "Laâyoune",
+      "trucksCount": 6,
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-03",
+          "productName": "Prestige Chocolat Caramel",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-04",
+          "productName": "Fraise Melba Gourmande",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-06",
+          "productName": "CAPITANO Crème de mangue",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-07",
+          "productName": "CAPITANO Vanille Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-08",
+          "productName": "TWISTY Morceaux de Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-09",
+          "productName": "MINI GARCIA Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-10",
+          "productName": "BROCHETTE Fraise Citron",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-11",
+          "productName": "DELICIO Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-12",
+          "productName": "P'TIPO Vanille Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-13",
+          "productName": "POT FRIO Coulis Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-14",
+          "productName": "GOLDEN GLOBE Yaourt",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-29",
+          "productName": "CAPITANO Enrobé Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-30",
+          "productName": "CAPITANO Framboise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-31",
+          "productName": "DELICIO Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-32",
+          "productName": "MINI GARCIA Vanille Fraise Coco",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-33",
+          "productName": "P'TIPO Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-34",
+          "productName": "POT FRIO Coulis Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-35",
+          "productName": "POT FRIO Coulis Citron",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-36",
+          "productName": "GOLDEN GLOBE Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-37",
+          "productName": "GOLDEN GLOBE Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-15",
+          "productName": "PANDA Vanille Chocolat 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-16",
+          "productName": "OCEANO Vanille Fraise 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-38",
+          "productName": "PANDA Nougat Noisettes 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-39",
+          "productName": "PANDA Vanille Fraise 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-40",
+          "productName": "OCEANO Vanille Chocolat 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-41",
+          "productName": "OCEANO Vanille Citron 1L",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-17",
+          "productName": "CROQUANTY Vanille enrobée",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-18",
+          "productName": "Prestige Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-19",
+          "productName": "OMEGA Biscuit Caramel",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-20",
+          "productName": "POT FLEURY Fraise Citron",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-21",
+          "productName": "ALDO Cornet Vanille Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-22",
+          "productName": "ICE FRUITY Fraise Orange",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-23",
+          "productName": "ALADINO Ananas Coco",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-24",
+          "productName": "POUCHY Bonbons",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-25",
+          "productName": "POPEYE Citron Fraise",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-26",
+          "productName": "PASTEK Melon Pastèque",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-27",
+          "productName": "POMMY Vanille Pomme",
+          "quantity": 120,
+          "startingStock": 120
+        },
+        {
+          "productId": "prod-28",
+          "productName": "PIRATOS Vanille Chocolat",
+          "quantity": 120,
+          "startingStock": 120
+        }
+      ],
+      "returns": [],
+      "adjustments": [
+        {
+          "id": "adj-Laâyoune-1",
+          "date": "2026-06-27",
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "type": "reception",
+          "quantity": 100,
+          "notes": "Seeding stock"
+        }
+      ]
+    }
+  },
+  "trucks": [
+    {
+      "id": "TRK-CA-01",
+      "driverName": "Chauffeur Casablanca 1",
+      "depotName": "Casablanca",
+      "tournee": "Secteur Casablanca Zone Nord",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 50,
+          "delivered": 42,
+          "returned": 6,
+          "lost": 2
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 1,
+          "lost": 1
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 40,
+          "delivered": 40,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "del-TRK-CA-01-101",
+          "clientName": "Supermarché Marjane Casablanca",
+          "city": "Casablanca",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 20
+            },
+            {
+              "productId": "prod-02",
+              "productName": "TWINNY Ananas Coco",
+              "quantity": 15
+            }
+          ],
+          "status": "Delivered",
+          "deliveredAt": "2026-06-28T08:30:00Z",
+          "signature": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><path d='M10,25 Q30,10 50,25 T90,25' fill='none' stroke='black' stroke-width='2'/></svg>",
+          "gps": {
+            "lat": 33.5731,
+            "lng": -7.5898
+          },
+          "paymentMethod": "Cheque"
+        },
+        {
+          "id": "del-TRK-CA-01-102",
+          "clientName": "Alimentation Générale El Hanaa",
+          "city": "Casablanca",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 10
+            },
+            {
+              "productId": "prod-05",
+              "productName": "Mystique Magic Bubblegum",
+              "quantity": 20
+            }
+          ],
+          "status": "Pending",
+          "deliveredAt": null,
+          "signature": null,
+          "gps": null,
+          "paymentMethod": "Cash"
+        }
+      ],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-CA-02",
+      "driverName": "Chauffeur Casablanca 2",
+      "depotName": "Casablanca",
+      "tournee": "Secteur Casablanca Zone Sud",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 50,
+          "delivered": 42,
+          "returned": 6,
+          "lost": 2
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 1,
+          "lost": 1
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 40,
+          "delivered": 40,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "del-TRK-CA-02-101",
+          "clientName": "Supermarché Marjane Casablanca",
+          "city": "Casablanca",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 20
+            },
+            {
+              "productId": "prod-02",
+              "productName": "TWINNY Ananas Coco",
+              "quantity": 15
+            }
+          ],
+          "status": "Delivered",
+          "deliveredAt": "2026-06-28T08:30:00Z",
+          "signature": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><path d='M10,25 Q30,10 50,25 T90,25' fill='none' stroke='black' stroke-width='2'/></svg>",
+          "gps": {
+            "lat": 33.5731,
+            "lng": -7.5898
+          },
+          "paymentMethod": "Cheque"
+        },
+        {
+          "id": "del-TRK-CA-02-102",
+          "clientName": "Alimentation Générale El Hanaa",
+          "city": "Casablanca",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 10
+            },
+            {
+              "productId": "prod-05",
+              "productName": "Mystique Magic Bubblegum",
+              "quantity": 20
+            }
+          ],
+          "status": "Pending",
+          "deliveredAt": null,
+          "signature": null,
+          "gps": null,
+          "paymentMethod": "Cash"
+        }
+      ],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-OU-01",
+      "driverName": "Chauffeur Oujda 1",
+      "depotName": "Oujda",
+      "tournee": "Secteur Oujda Zone Nord",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 50,
+          "delivered": 42,
+          "returned": 6,
+          "lost": 2
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 1,
+          "lost": 1
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 40,
+          "delivered": 40,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "del-TRK-OU-01-101",
+          "clientName": "Supermarché Marjane Oujda",
+          "city": "Oujda",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 20
+            },
+            {
+              "productId": "prod-02",
+              "productName": "TWINNY Ananas Coco",
+              "quantity": 15
+            }
+          ],
+          "status": "Delivered",
+          "deliveredAt": "2026-06-28T08:30:00Z",
+          "signature": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><path d='M10,25 Q30,10 50,25 T90,25' fill='none' stroke='black' stroke-width='2'/></svg>",
+          "gps": {
+            "lat": 33.5731,
+            "lng": -7.5898
+          },
+          "paymentMethod": "Cheque"
+        },
+        {
+          "id": "del-TRK-OU-01-102",
+          "clientName": "Alimentation Générale El Hanaa",
+          "city": "Oujda",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 10
+            },
+            {
+              "productId": "prod-05",
+              "productName": "Mystique Magic Bubblegum",
+              "quantity": 20
+            }
+          ],
+          "status": "Pending",
+          "deliveredAt": null,
+          "signature": null,
+          "gps": null,
+          "paymentMethod": "Cash"
+        }
+      ],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-TA-01",
+      "driverName": "Chauffeur Tanger 1",
+      "depotName": "Tanger",
+      "tournee": "Secteur Tanger Zone Nord",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 50,
+          "delivered": 42,
+          "returned": 6,
+          "lost": 2
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 1,
+          "lost": 1
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 40,
+          "delivered": 40,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "del-TRK-TA-01-101",
+          "clientName": "Supermarché Marjane Tanger",
+          "city": "Tanger",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 20
+            },
+            {
+              "productId": "prod-02",
+              "productName": "TWINNY Ananas Coco",
+              "quantity": 15
+            }
+          ],
+          "status": "Delivered",
+          "deliveredAt": "2026-06-28T08:30:00Z",
+          "signature": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><path d='M10,25 Q30,10 50,25 T90,25' fill='none' stroke='black' stroke-width='2'/></svg>",
+          "gps": {
+            "lat": 33.5731,
+            "lng": -7.5898
+          },
+          "paymentMethod": "Cheque"
+        },
+        {
+          "id": "del-TRK-TA-01-102",
+          "clientName": "Alimentation Générale El Hanaa",
+          "city": "Tanger",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 10
+            },
+            {
+              "productId": "prod-05",
+              "productName": "Mystique Magic Bubblegum",
+              "quantity": 20
+            }
+          ],
+          "status": "Pending",
+          "deliveredAt": null,
+          "signature": null,
+          "gps": null,
+          "paymentMethod": "Cash"
+        }
+      ],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-ME-01",
+      "driverName": "Chauffeur Meknès 1",
+      "depotName": "Meknès",
+      "tournee": "Secteur Meknès Zone Nord",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 50,
+          "delivered": 42,
+          "returned": 6,
+          "lost": 2
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 1,
+          "lost": 1
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 40,
+          "delivered": 40,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "del-TRK-ME-01-101",
+          "clientName": "Supermarché Marjane Meknès",
+          "city": "Meknès",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 20
+            },
+            {
+              "productId": "prod-02",
+              "productName": "TWINNY Ananas Coco",
+              "quantity": 15
+            }
+          ],
+          "status": "Delivered",
+          "deliveredAt": "2026-06-28T08:30:00Z",
+          "signature": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><path d='M10,25 Q30,10 50,25 T90,25' fill='none' stroke='black' stroke-width='2'/></svg>",
+          "gps": {
+            "lat": 33.5731,
+            "lng": -7.5898
+          },
+          "paymentMethod": "Cheque"
+        },
+        {
+          "id": "del-TRK-ME-01-102",
+          "clientName": "Alimentation Générale El Hanaa",
+          "city": "Meknès",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 10
+            },
+            {
+              "productId": "prod-05",
+              "productName": "Mystique Magic Bubblegum",
+              "quantity": 20
+            }
+          ],
+          "status": "Pending",
+          "deliveredAt": null,
+          "signature": null,
+          "gps": null,
+          "paymentMethod": "Cash"
+        }
+      ],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-MA-01",
+      "driverName": "Chauffeur Marrakech 1",
+      "depotName": "Marrakech",
+      "tournee": "Secteur Marrakech Zone Nord",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 50,
+          "delivered": 42,
+          "returned": 6,
+          "lost": 2
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 1,
+          "lost": 1
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 40,
+          "delivered": 40,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "del-TRK-MA-01-101",
+          "clientName": "Supermarché Marjane Marrakech",
+          "city": "Marrakech",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 20
+            },
+            {
+              "productId": "prod-02",
+              "productName": "TWINNY Ananas Coco",
+              "quantity": 15
+            }
+          ],
+          "status": "Delivered",
+          "deliveredAt": "2026-06-28T08:30:00Z",
+          "signature": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><path d='M10,25 Q30,10 50,25 T90,25' fill='none' stroke='black' stroke-width='2'/></svg>",
+          "gps": {
+            "lat": 33.5731,
+            "lng": -7.5898
+          },
+          "paymentMethod": "Cheque"
+        },
+        {
+          "id": "del-TRK-MA-01-102",
+          "clientName": "Alimentation Générale El Hanaa",
+          "city": "Marrakech",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 10
+            },
+            {
+              "productId": "prod-05",
+              "productName": "Mystique Magic Bubblegum",
+              "quantity": 20
+            }
+          ],
+          "status": "Pending",
+          "deliveredAt": null,
+          "signature": null,
+          "gps": null,
+          "paymentMethod": "Cash"
+        }
+      ],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-MA-02",
+      "driverName": "Chauffeur Marrakech 2",
+      "depotName": "Marrakech",
+      "tournee": "Secteur Marrakech Zone Sud",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 50,
+          "delivered": 42,
+          "returned": 6,
+          "lost": 2
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 1,
+          "lost": 1
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 40,
+          "delivered": 40,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "del-TRK-MA-02-101",
+          "clientName": "Supermarché Marjane Marrakech",
+          "city": "Marrakech",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 20
+            },
+            {
+              "productId": "prod-02",
+              "productName": "TWINNY Ananas Coco",
+              "quantity": 15
+            }
+          ],
+          "status": "Delivered",
+          "deliveredAt": "2026-06-28T08:30:00Z",
+          "signature": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><path d='M10,25 Q30,10 50,25 T90,25' fill='none' stroke='black' stroke-width='2'/></svg>",
+          "gps": {
+            "lat": 33.5731,
+            "lng": -7.5898
+          },
+          "paymentMethod": "Cheque"
+        },
+        {
+          "id": "del-TRK-MA-02-102",
+          "clientName": "Alimentation Générale El Hanaa",
+          "city": "Marrakech",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 10
+            },
+            {
+              "productId": "prod-05",
+              "productName": "Mystique Magic Bubblegum",
+              "quantity": 20
+            }
+          ],
+          "status": "Pending",
+          "deliveredAt": null,
+          "signature": null,
+          "gps": null,
+          "paymentMethod": "Cash"
+        }
+      ],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-AG-01",
+      "driverName": "Chauffeur Agadir 1",
+      "depotName": "Agadir",
+      "tournee": "Secteur Agadir Zone Nord",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 50,
+          "delivered": 42,
+          "returned": 6,
+          "lost": 2
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 1,
+          "lost": 1
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 40,
+          "delivered": 40,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "del-TRK-AG-01-101",
+          "clientName": "Supermarché Marjane Agadir",
+          "city": "Agadir",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 20
+            },
+            {
+              "productId": "prod-02",
+              "productName": "TWINNY Ananas Coco",
+              "quantity": 15
+            }
+          ],
+          "status": "Delivered",
+          "deliveredAt": "2026-06-28T08:30:00Z",
+          "signature": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><path d='M10,25 Q30,10 50,25 T90,25' fill='none' stroke='black' stroke-width='2'/></svg>",
+          "gps": {
+            "lat": 33.5731,
+            "lng": -7.5898
+          },
+          "paymentMethod": "Cheque"
+        },
+        {
+          "id": "del-TRK-AG-01-102",
+          "clientName": "Alimentation Générale El Hanaa",
+          "city": "Agadir",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 10
+            },
+            {
+              "productId": "prod-05",
+              "productName": "Mystique Magic Bubblegum",
+              "quantity": 20
+            }
+          ],
+          "status": "Pending",
+          "deliveredAt": null,
+          "signature": null,
+          "gps": null,
+          "paymentMethod": "Cash"
+        }
+      ],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-SA-01",
+      "driverName": "Chauffeur Safi 1",
+      "depotName": "Safi",
+      "tournee": "Secteur Safi Zone Nord",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 50,
+          "delivered": 42,
+          "returned": 6,
+          "lost": 2
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 1,
+          "lost": 1
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 40,
+          "delivered": 40,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "del-TRK-SA-01-101",
+          "clientName": "Supermarché Marjane Safi",
+          "city": "Safi",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 20
+            },
+            {
+              "productId": "prod-02",
+              "productName": "TWINNY Ananas Coco",
+              "quantity": 15
+            }
+          ],
+          "status": "Delivered",
+          "deliveredAt": "2026-06-28T08:30:00Z",
+          "signature": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><path d='M10,25 Q30,10 50,25 T90,25' fill='none' stroke='black' stroke-width='2'/></svg>",
+          "gps": {
+            "lat": 33.5731,
+            "lng": -7.5898
+          },
+          "paymentMethod": "Cheque"
+        },
+        {
+          "id": "del-TRK-SA-01-102",
+          "clientName": "Alimentation Générale El Hanaa",
+          "city": "Safi",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 10
+            },
+            {
+              "productId": "prod-05",
+              "productName": "Mystique Magic Bubblegum",
+              "quantity": 20
+            }
+          ],
+          "status": "Pending",
+          "deliveredAt": null,
+          "signature": null,
+          "gps": null,
+          "paymentMethod": "Cash"
+        }
+      ],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-BE-01",
+      "driverName": "Chauffeur Berrechid 1",
+      "depotName": "Berrechid",
+      "tournee": "Secteur Berrechid Zone Nord",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 50,
+          "delivered": 42,
+          "returned": 6,
+          "lost": 2
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 1,
+          "lost": 1
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 40,
+          "delivered": 40,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "del-TRK-BE-01-101",
+          "clientName": "Supermarché Marjane Berrechid",
+          "city": "Berrechid",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 20
+            },
+            {
+              "productId": "prod-02",
+              "productName": "TWINNY Ananas Coco",
+              "quantity": 15
+            }
+          ],
+          "status": "Delivered",
+          "deliveredAt": "2026-06-28T08:30:00Z",
+          "signature": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='50'><path d='M10,25 Q30,10 50,25 T90,25' fill='none' stroke='black' stroke-width='2'/></svg>",
+          "gps": {
+            "lat": 33.5731,
+            "lng": -7.5898
+          },
+          "paymentMethod": "Cheque"
+        },
+        {
+          "id": "del-TRK-BE-01-102",
+          "clientName": "Alimentation Générale El Hanaa",
+          "city": "Berrechid",
+          "items": [
+            {
+              "productId": "prod-01",
+              "productName": "TWINNY Grenadine lait",
+              "quantity": 10
+            },
+            {
+              "productId": "prod-05",
+              "productName": "Mystique Magic Bubblegum",
+              "quantity": 20
+            }
+          ],
+          "status": "Pending",
+          "deliveredAt": null,
+          "signature": null,
+          "gps": null,
+          "paymentMethod": "Cash"
+        }
+      ],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-FÈ-01",
+      "driverName": "Chauffeur Fès 1",
+      "depotName": "Fès",
+      "tournee": "Secteur Fès Zone Centre",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 40,
+          "delivered": 35,
+          "returned": 5,
+          "lost": 0
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 2,
+          "lost": 0
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 30,
+          "delivered": 30,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-RA-01",
+      "driverName": "Chauffeur Rabat 1",
+      "depotName": "Rabat",
+      "tournee": "Secteur Rabat Zone Centre",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 40,
+          "delivered": 35,
+          "returned": 5,
+          "lost": 0
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 2,
+          "lost": 0
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 30,
+          "delivered": 30,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [],
+      "syncPending": false,
+      "isActive": true
+    },
+    {
+      "id": "TRK-LA-01",
+      "driverName": "Chauffeur Laâyoune 1",
+      "depotName": "Laâyoune",
+      "tournee": "Secteur Laâyoune Zone Centre",
+      "stock": [
+        {
+          "productId": "prod-01",
+          "productName": "TWINNY Grenadine lait",
+          "loaded": 40,
+          "delivered": 35,
+          "returned": 5,
+          "lost": 0
+        },
+        {
+          "productId": "prod-02",
+          "productName": "TWINNY Ananas Coco",
+          "loaded": 30,
+          "delivered": 28,
+          "returned": 2,
+          "lost": 0
+        },
+        {
+          "productId": "prod-05",
+          "productName": "Mystique Magic Bubblegum",
+          "loaded": 30,
+          "delivered": 30,
+          "returned": 0,
+          "lost": 0
+        }
+      ],
+      "deliveries": [],
+      "syncPending": false,
+      "isActive": true
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "log-1791756166692",
+      "timestamp": "2026-10-11T22:02:46.692Z",
+      "userId": "user-admin",
+      "userName": "Youssef Zahi",
+      "role": "Super Admin",
+      "action": "Modification Produit",
+      "details": "Produit modifié : TWINNY Grenadine lait (prod-01)"
+    },
+    {
+      "id": "log-001",
+      "timestamp": "2026-06-28T06:30:00Z",
+      "userId": "user-usine",
+      "userName": "Rachid Usine",
+      "role": "Responsable Usine",
+      "action": "Création de Lot",
+      "details": "Création du lot de production LOT-2026-0610-C pour 800 cartons de Mystique Magic Bubblegum."
+    },
+    {
+      "id": "log-002",
+      "timestamp": "2026-06-28T07:15:00Z",
+      "userId": "user-admin",
+      "userName": "Youssef Zahi",
+      "role": "Super Admin",
+      "action": "Transfert Expédié",
+      "details": "Transfert TR-2026-103 expédié de Magasin Zone Logistique vers Dépôt Casablanca (400 cartons)."
+    }
+  ],
+  "deliveryNotes": [],
+  "supplyRequests": [],
+  "bonAvoirs": [],
+  "bonEncaissements": [],
+  "bonChanges": []
+}
