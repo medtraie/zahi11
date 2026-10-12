@@ -404,7 +404,7 @@ export default function OpenStreetMapGeoloc({
             <b>🌆 Quartier / Adresse:</b> ${f.gps?.address || district.address}<br/>
             <b>📅 Jours de Livraison:</b> <span style="font-weight: 900; color: #0284c7;">${deliveryDays} Jours</span><br/>
             <b>🍦 Volume Livré:</b> <span style="font-weight: 900; color: #059669;">${totalLiters.toLocaleString()} L (${totalCartons} Cartons)</span><br/>
-            <b>📦 Remplissage Stock:</b> <span style="font-weight: 800; color: #0f172a;">${f.fillLevel}%</span> | ⚡ <span style="color: #d97706;">${f.powerConsumption} W</span>
+            <b>📦 Remplissage Stock:</b> <span style="font-weight: 800; color: #0f172a;">${f.fillLevel}%</span>
           </div>
 
           <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" rel="noopener noreferrer" style="
