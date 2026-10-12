@@ -1130,6 +1130,20 @@ app.post("/api/products/:id", (req, res) => {
 
   state.products[productIndex] = updatedProduct;
 
+  // Sync batch expiration dates if expiryDays changed
+  if (expiryDays !== undefined && Number(expiryDays) !== oldProduct.expiryDays && Array.isArray(state.batches)) {
+    const newExpiry = Number(expiryDays);
+    state.batches.forEach(b => {
+      if ((b.productId === id || b.productName === oldProduct.name) && b.productionDate) {
+        const pDate = new Date(b.productionDate);
+        if (!isNaN(pDate.getTime())) {
+          pDate.setDate(pDate.getDate() + newExpiry);
+          b.expirationDate = pDate.toISOString().split('T')[0];
+        }
+      }
+    });
+  }
+
   // Add an audit log if user context is provided
   if (user) {
     const log = {

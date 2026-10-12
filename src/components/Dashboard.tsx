@@ -942,39 +942,76 @@ export default function Dashboard({
             ) : (
               [...state.batches]
                 .filter(b => b.status === 'active')
-                .sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime())
-                .slice(0, 4)
                 .map(b => {
-                  const expiryDate = new Date(b.expirationDate);
+                  const product = state.products.find(p => p.id === b.productId || p.name === b.productName);
+                  const validityDays = product?.expiryDays || 365;
+                  
+                  // Compute dynamic expiration based on productionDate + validityDays from Catalogue
+                  let effectiveExpiryStr = b.expirationDate;
+                  if (b.productionDate) {
+                    const prodD = new Date(b.productionDate);
+                    if (!isNaN(prodD.getTime())) {
+                      const computedExp = new Date(prodD.getTime() + validityDays * 86400000);
+                      effectiveExpiryStr = computedExp.toISOString().split('T')[0];
+                    }
+                  }
+
+                  const expiryDate = new Date(effectiveExpiryStr);
                   const today = new Date();
                   const diffTime = expiryDate.getTime() - today.getTime();
                   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                  const isUrgent = diffDays < 90;
+                  const isExpired = diffDays <= 0;
+                  const isUrgent = diffDays > 0 && diffDays < 90;
 
+                  return {
+                    ...b,
+                    effectiveExpiryStr,
+                    validityDays,
+                    diffDays,
+                    isExpired,
+                    isUrgent
+                  };
+                })
+                .sort((a, b) => new Date(a.effectiveExpiryStr).getTime() - new Date(b.effectiveExpiryStr).getTime())
+                .slice(0, 5)
+                .map(b => {
                   return (
-                    <div key={b.id} className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{b.productName}</span>
-                          <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.2 rounded font-mono">
+                    <div key={b.id} className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-between items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{b.productName}</span>
+                          <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.2 rounded font-mono shrink-0">
                             {b.batchNumber}
                           </span>
+                          <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold px-1.5 py-0.2 rounded border border-emerald-200/40 shrink-0" title="Validité issue du Catalogue Zahi">
+                            {lang === 'fr' ? `Validité : ${b.validityDays}j` : `الصلاحية: ${b.validityDays} يوم`}
+                          </span>
                         </div>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          {lang === 'fr' ? 'Expiration :' : 'تاريخ الصلاحية :'} <span className="font-mono">{b.expirationDate}</span> ({b.quantity} ctn)
-                        </p>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-1 flex-wrap">
+                          {b.productionDate && (
+                            <span>{lang === 'fr' ? 'Prod :' : 'إنتاج :'} <b className="text-slate-600 dark:text-slate-300 font-mono">{b.productionDate}</b></span>
+                          )}
+                          <span>{lang === 'fr' ? 'Exp :' : 'صلاحية :'} <b className="text-slate-700 dark:text-slate-200 font-mono">{b.effectiveExpiryStr}</b></span>
+                          <span>({b.quantity} ctn)</span>
+                        </div>
                       </div>
 
-                      <div className="text-right">
-                        <span className={`text-xs font-black px-2.5 py-1 rounded-xl ${
-                          isUrgent 
-                            ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-950/40' 
-                            : 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-950/40'
+                      <div className="text-right shrink-0">
+                        <span className={`text-xs font-black px-2.5 py-1 rounded-xl inline-block ${
+                          b.isExpired
+                            ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50'
+                            : b.isUrgent 
+                              ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-950/40' 
+                              : 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-950/40'
                         }`}>
-                          {diffDays} j
+                          {b.diffDays} j
                         </span>
                         <p className="text-[9px] text-slate-400 mt-1 uppercase font-semibold">
-                          {isUrgent ? (lang === 'fr' ? 'À distribuer d\'urgence' : 'عاجل FEFO') : 'Normal'}
+                          {b.isExpired 
+                            ? (lang === 'fr' ? 'Expiré' : 'منتهي') 
+                            : b.isUrgent 
+                              ? (lang === 'fr' ? 'À distribuer d\'urgence' : 'عاجل FEFO') 
+                              : 'Normal'}
                         </p>
                       </div>
                     </div>

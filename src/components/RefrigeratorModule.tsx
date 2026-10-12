@@ -1101,7 +1101,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
   // Geolocation Controls State
   const [geolocSelectedCity, setGeolocSelectedCity] = useState<string>('all');
   const [geolocSelectedFridgeId, setGeolocSelectedFridgeId] = useState<string | null>('REF-ZH-7501');
-  const [geolocFilterStatus, setGeolocFilterStatus] = useState<'all' | 'service' | 'stock' | 'maintenance'>('all');
+  const [geolocFilterStatus, setGeolocFilterStatus] = useState<'all' | 'service' | 'stock' | 'maintenance' | 'alert'>('all');
   const [geolocSearchTerm, setGeolocSearchTerm] = useState<string>('');
 
   // Selected Refrigerator Serial for specific history filter and PDF generation
@@ -4741,19 +4741,19 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                     onClick={() => { setGeolocFilterStatus(geolocFilterStatus === 'stock' ? 'all' : 'stock'); playBip(700, 0.04); }}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
                       geolocFilterStatus === 'stock'
-                        ? 'bg-sky-500/10 border-sky-500/40 shadow-sm'
-                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-sky-500/30'
+                        ? 'bg-orange-500/10 border-orange-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-orange-500/30'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                         {lang === 'fr' ? 'Non Livrés (Stock)' : 'غير مسلّمة (مستودع)'}
                       </span>
-                      <div className="p-2 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                      <div className="p-2 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400">
                         <Warehouse className="h-4 w-4" />
                       </div>
                     </div>
-                    <div className="mt-2 text-2xl font-black text-sky-600 dark:text-sky-400 font-mono tracking-tight">
+                    <div className="mt-2 text-2xl font-black text-orange-600 dark:text-orange-400 font-mono tracking-tight">
                       {inStockCount}
                     </div>
                     <div className="mt-1 text-[10px] text-slate-400 font-medium">
@@ -4788,10 +4788,23 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
 
                   {/* Alertes Périmètre GPS */}
                   <div
-                    className={`p-4 rounded-2xl border transition-all relative overflow-hidden ${
-                      alertCount > 0
-                        ? 'bg-rose-500/10 border-rose-500/40 shadow-sm'
-                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800'
+                    onClick={() => {
+                      const next = geolocFilterStatus === 'alert' ? 'all' : 'alert';
+                      setGeolocFilterStatus(next);
+                      playBip(700, 0.04);
+                      if (next === 'alert') {
+                        const firstAlert = fridges.find(f => f.isLocationAlert);
+                        if (firstAlert) {
+                          setGeolocSelectedFridgeId(firstAlert.id);
+                        }
+                      }
+                    }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      geolocFilterStatus === 'alert'
+                        ? 'bg-rose-500/20 border-rose-500 ring-2 ring-rose-500/30 shadow-md'
+                        : alertCount > 0
+                          ? 'bg-rose-500/10 border-rose-500/40 hover:border-rose-500/60 shadow-sm'
+                          : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-rose-500/30'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -4853,6 +4866,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                         <option value="service">{lang === 'fr' ? 'Livré (Chez le Client)' : 'مسلّمة (لدى العميل)'}</option>
                         <option value="stock">{lang === 'fr' ? 'Non livré (En Stock / Dépôt)' : 'غير مسلّمة (في المستودع)'}</option>
                         <option value="maintenance">{lang === 'fr' ? 'En Maintenance (Atelier R&M)' : 'في الصيانة (الورشة)'}</option>
+                        <option value="alert">{lang === 'fr' ? '🚨 Alertes GPS (Hors périmètre)' : '🚨 تنبيهات الخروج من النطاق GPS'}</option>
                       </select>
                     </div>
 
@@ -4985,7 +4999,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                   </span>
                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase inline-block ${
                                     selectedFridge.status === 'service' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400' :
-                                    selectedFridge.status === 'stock' ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-400' :
+                                    selectedFridge.status === 'stock' ? 'bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-400' :
                                     'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400'
                                   }`}>
                                     {selectedFridge.status === 'service' ? (lang === 'fr' ? 'Livré' : 'مسلّمة') : selectedFridge.status === 'stock' ? (lang === 'fr' ? 'Non livré' : 'غير مسلّمة') : (lang === 'fr' ? 'Maintenance' : 'صيانة')}
@@ -5159,7 +5173,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                     <span className="text-[10px] font-mono text-slate-400 font-bold">
                       {fridges
                         .filter(f => geolocSelectedCity === 'all' || f.depot === geolocSelectedCity)
-                        .filter(f => geolocFilterStatus === 'all' || f.status === geolocFilterStatus)
+                        .filter(f => geolocFilterStatus === 'all' ? true : geolocFilterStatus === 'alert' ? !!f.isLocationAlert : f.status === geolocFilterStatus)
                         .filter(f => !geolocSearchTerm.trim() || f.serialNumber.toLowerCase().includes(geolocSearchTerm.toLowerCase()) || (f.client || '').toLowerCase().includes(geolocSearchTerm.toLowerCase())).length} {lang === 'fr' ? 'Appareils visibles' : 'جهاز مرئي'}
                     </span>
                   </div>
@@ -5167,7 +5181,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {fridges
                       .filter(f => geolocSelectedCity === 'all' || f.depot === geolocSelectedCity)
-                      .filter(f => geolocFilterStatus === 'all' || f.status === geolocFilterStatus)
+                      .filter(f => geolocFilterStatus === 'all' ? true : geolocFilterStatus === 'alert' ? !!f.isLocationAlert : f.status === geolocFilterStatus)
                       .filter(f => !geolocSearchTerm.trim() || f.serialNumber.toLowerCase().includes(geolocSearchTerm.toLowerCase()) || (f.client || '').toLowerCase().includes(geolocSearchTerm.toLowerCase()))
                       .map(f => {
                         const isSelected = f.id === geolocSelectedFridgeId;
@@ -5186,7 +5200,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                               <span className="font-mono font-black text-xs text-slate-900 dark:text-white">{f.serialNumber}</span>
                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
                                 f.status === 'service' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' :
-                                f.status === 'stock' ? 'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400' :
+                                f.status === 'stock' ? 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400' :
                                 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
                               }`}>
                                 {f.status === 'service' ? (lang === 'fr' ? 'Livré' : 'مسلّمة') : f.status === 'stock' ? (lang === 'fr' ? 'Non livré' : 'غير مسلّمة') : (lang === 'fr' ? 'Maintenance' : 'صيانة')}

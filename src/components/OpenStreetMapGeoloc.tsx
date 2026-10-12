@@ -39,7 +39,7 @@ export interface FridgeGpsData {
 interface OpenStreetMapGeolocProps {
   fridges: FridgeGpsData[];
   selectedCity?: string;
-  filterStatus?: 'all' | 'service' | 'stock' | 'maintenance';
+  filterStatus?: 'all' | 'service' | 'stock' | 'maintenance' | 'alert';
   searchTerm?: string;
   selectedFridgeId: string | null;
   onSelectFridge: (id: string | null) => void;
@@ -303,7 +303,12 @@ export default function OpenStreetMapGeoloc({
     // Filter fridges
     const filtered = fridges.filter(f => {
       const matchCity = selectedCity === 'all' || f.depot === selectedCity;
-      const matchStatus = filterStatus === 'all' || f.status === filterStatus;
+      const matchStatus = 
+        filterStatus === 'all' 
+          ? true 
+          : filterStatus === 'alert' 
+            ? !!f.isLocationAlert 
+            : f.status === filterStatus;
       const matchSearch = !searchTerm || 
         f.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (f.client && f.client.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -347,7 +352,8 @@ export default function OpenStreetMapGeoloc({
       bounds.push([lat, lng]);
 
       const isAlert = !!f.isLocationAlert;
-      const statusColor = isAlert ? '#ef4444' : f.status === 'service' ? '#10b981' : f.status === 'stock' ? '#0284c7' : '#f59e0b';
+      // Orange (#f97316) for non livré (stock), Green (#10b981) for livré (service), Red (#ef4444) for alert
+      const statusColor = isAlert ? '#ef4444' : f.status === 'service' ? '#10b981' : f.status === 'stock' ? '#f97316' : '#f59e0b';
       const statusLabel = isAlert 
         ? (lang === 'fr' ? '🚨 ALERTE GPS' : '🚨 إنذار GPS') 
         : f.status === 'service' 
@@ -399,8 +405,8 @@ export default function OpenStreetMapGeoloc({
             "></span>
             <span>${f.serialNumber}</span>
             <span style="
-              background-color: ${isAlert ? '#7f1d1d' : isSelected ? '#1e293b' : '#f1f5f9'};
-              color: ${isAlert ? '#fca5a5' : isSelected ? '#38bdf8' : '#0284c7'};
+              background-color: ${isAlert ? '#7f1d1d' : isSelected ? '#1e293b' : f.status === 'stock' ? '#fff7ed' : '#f1f5f9'};
+              color: ${isAlert ? '#fca5a5' : isSelected ? '#38bdf8' : f.status === 'stock' ? '#c2410c' : '#0284c7'};
               padding: 1px 4px;
               border-radius: 4px;
               font-size: 9px;
@@ -429,8 +435,8 @@ export default function OpenStreetMapGeoloc({
               <span style="margin-left: 4px; background-color: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 800;">${categoryBadge}</span>
             </div>
             <span style="
-              background-color: ${isAlert ? '#fee2e2' : f.status === 'service' ? '#dcfce7' : f.status === 'stock' ? '#e0f2fe' : '#fef3c7'};
-              color: ${isAlert ? '#991b1b' : f.status === 'service' ? '#15803d' : f.status === 'stock' ? '#0369a1' : '#b45309'};
+              background-color: ${isAlert ? '#fee2e2' : f.status === 'service' ? '#dcfce7' : f.status === 'stock' ? '#ffedd5' : '#fef3c7'};
+              color: ${isAlert ? '#991b1b' : f.status === 'service' ? '#15803d' : f.status === 'stock' ? '#c2410c' : '#b45309'};
               padding: 2px 7px; border-radius: 9999px; font-size: 9px; font-weight: 800; text-transform: uppercase;
             ">
               ${statusLabel}
@@ -529,8 +535,12 @@ export default function OpenStreetMapGeoloc({
           markersRef.current[selectedFridgeId].openPopup();
         }
       }
-    } else if ((cityChanged || filterChanged || searchChanged) && bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+    } else if (cityChanged || filterChanged || searchChanged) {
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+      } else {
+        map.setView([31.7917, -7.0926], 6);
+      }
     }
   }, [fridges, selectedCity, filterStatus, searchTerm, selectedFridgeId, moroccoCityCoords]);
 
@@ -549,6 +559,21 @@ export default function OpenStreetMapGeoloc({
 
   const selectedFridge = fridges.find(f => f.id === selectedFridgeId);
 
+  const visibleCount = fridges.filter(f => {
+    const matchCity = selectedCity === 'all' || f.depot === selectedCity;
+    const matchStatus = 
+      filterStatus === 'all' 
+        ? true 
+        : filterStatus === 'alert' 
+          ? !!f.isLocationAlert 
+          : f.status === filterStatus;
+    const matchSearch = !searchTerm || 
+      f.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (f.client && f.client.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      f.depot.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchCity && matchStatus && matchSearch;
+  }).length;
+
   return (
     <div 
       ref={containerWrapperRef}
@@ -557,6 +582,18 @@ export default function OpenStreetMapGeoloc({
       }`}
     >
       <div ref={mapContainerRef} className="w-full h-full z-10 bg-slate-900" />
+
+      {/* Empty State Banner if 0 items match */}
+      {visibleCount === 0 && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-slate-950/90 backdrop-blur-md text-white p-5 rounded-2xl border border-slate-700 shadow-2xl flex flex-col items-center gap-2 text-center max-w-sm pointer-events-none">
+          <AlertTriangle className="h-8 w-8 text-amber-400" />
+          <p className="text-xs font-bold leading-relaxed">
+            {filterStatus === 'alert'
+              ? (lang === 'fr' ? 'Aucune alerte GPS active. Tous les appareils sont dans leurs périmètres autorisés.' : 'لا توجد تنبيهات GPS حالياً. كافة الأجهزة ضمن النطاق المعتمد.')
+              : (lang === 'fr' ? 'Aucun réfrigérateur ne correspond à vos filtres.' : 'لا توجد أجهزة مطابقة لمعايير البحث الحالية.')}
+          </p>
+        </div>
+      )}
       
       {/* Top Map Badges & Full Screen Controls Overlay */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
