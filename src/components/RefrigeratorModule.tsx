@@ -1429,6 +1429,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
   const [bonHistoryFilter, setBonHistoryFilter] = useState<'all' | 'livraison' | 'entry' | 'sortie' | 'prise_en_charge' | 'decharge' | 'contrat_depot' | 'depot_regional'>('all');
   const [viewingBonModal, setViewingBonModal] = useState<any | null>(null);
   const [expandedBonId, setExpandedBonId] = useState<string | null>(null);
+  const [bonHistoryViewMode, setBonHistoryViewMode] = useState<'cards' | 'table'>('table');
   const [statusFilter, setStatusFilter] = useState<'all' | 'stock' | 'service' | 'maintenance'>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'AP' | 'AG' | 'AS'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -4710,7 +4711,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                     </div>
                   </div>
 
-                  {/* En Service Points de Vente */}
+                  {/* Appareils Livrés (Chez les Clients) */}
                   <div
                     onClick={() => { setGeolocFilterStatus(geolocFilterStatus === 'service' ? 'all' : 'service'); playBip(700, 0.04); }}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
@@ -4721,7 +4722,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                        {lang === 'fr' ? 'Points de Vente' : 'نقاط بيع في الخدمة'}
+                        {lang === 'fr' ? 'Appareils Livrés' : 'أجهزة مسلّمة'}
                       </span>
                       <div className="p-2 rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
                         <Building2 className="h-4 w-4" />
@@ -4731,11 +4732,11 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       {inServiceCount}
                     </div>
                     <div className="mt-1 text-[10px] text-slate-400 font-medium">
-                      {lang === 'fr' ? 'Actifs chez les clients' : 'موزعة لدى المتاجر'}
+                      {lang === 'fr' ? 'Livrés chez les clients' : 'مسلّمة ومثبتة لدى العملاء'}
                     </div>
                   </div>
 
-                  {/* En Stock Dépôts */}
+                  {/* Non Livrés (En Stock Dépôts) */}
                   <div
                     onClick={() => { setGeolocFilterStatus(geolocFilterStatus === 'stock' ? 'all' : 'stock'); playBip(700, 0.04); }}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
@@ -4746,7 +4747,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                        {lang === 'fr' ? 'Dépôts Régionaux' : 'بالمستودعات الإقليمية'}
+                        {lang === 'fr' ? 'Non Livrés (Stock)' : 'غير مسلّمة (مستودع)'}
                       </span>
                       <div className="p-2 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
                         <Warehouse className="h-4 w-4" />
@@ -4756,7 +4757,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       {inStockCount}
                     </div>
                     <div className="mt-1 text-[10px] text-slate-400 font-medium">
-                      {lang === 'fr' ? 'Disponibles en réserve' : 'جاهزة للتحويل والاستعمال'}
+                      {lang === 'fr' ? 'En réserve dans les dépôts' : 'بالمستودعات لم تسلم بعد'}
                     </div>
                   </div>
 
@@ -4849,8 +4850,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                         className="w-full text-xs p-2.5 border border-slate-200 dark:border-slate-700/80 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-bold outline-none focus:border-emerald-500 shadow-sm cursor-pointer"
                       >
                         <option value="all">{lang === 'fr' ? 'Tous les statuts' : 'كافة الحالات'}</option>
-                        <option value="service">{lang === 'fr' ? 'En Service (Chez le Client)' : 'في الخدمة (لدى العميل)'}</option>
-                        <option value="stock">{lang === 'fr' ? 'En Stock (Dépôt Régional)' : 'في المخزون (المستودع)'}</option>
+                        <option value="service">{lang === 'fr' ? 'Livré (Chez le Client)' : 'مسلّمة (لدى العميل)'}</option>
+                        <option value="stock">{lang === 'fr' ? 'Non livré (En Stock / Dépôt)' : 'غير مسلّمة (في المستودع)'}</option>
                         <option value="maintenance">{lang === 'fr' ? 'En Maintenance (Atelier R&M)' : 'في الصيانة (الورشة)'}</option>
                       </select>
                     </div>
@@ -4984,10 +4985,10 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                   </span>
                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase inline-block ${
                                     selectedFridge.status === 'service' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400' :
-                                    selectedFridge.status === 'maintenance' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400' :
+                                    selectedFridge.status === 'stock' ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-400' :
                                     'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400'
                                   }`}>
-                                    {selectedFridge.status}
+                                    {selectedFridge.status === 'service' ? (lang === 'fr' ? 'Livré' : 'مسلّمة') : selectedFridge.status === 'stock' ? (lang === 'fr' ? 'Non livré' : 'غير مسلّمة') : (lang === 'fr' ? 'Maintenance' : 'صيانة')}
                                   </span>
                                 </div>
                               </div>
@@ -5006,22 +5007,49 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
 
                           {/* GPS Movement Alert Action Box */}
                           {selectedFridge.isLocationAlert ? (
-                            <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl space-y-2">
-                              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs">
+                            <div className="p-4 bg-rose-500/10 border-2 border-rose-500/40 rounded-2xl space-y-3">
+                              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-black text-xs">
                                 <BellRing className="h-4 w-4 animate-bounce shrink-0" />
-                                <span>{selectedFridge.alertReason || 'Changement de position GPS détecté !'}</span>
+                                <span>{selectedFridge.alertReason || '⚠️ Déplacement suspect hors périmètre (+3.4 km détecté)'}</span>
                               </div>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                                {lang === 'fr' ? 'Dernier signal : ' : 'آخر إشارة : '}{selectedFridge.alertTimestamp || '2026-07-22 14:15'}
+                              
+                              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-rose-200 dark:border-rose-900/50 space-y-2.5 text-[11px]">
+                                <div>
+                                  <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase block">
+                                    📍 {lang === 'fr' ? "Emplacement d'origine / Client agréé :" : "الموقع الأصلي المعتمد للعميل :"}
+                                  </span>
+                                  <span className="font-bold text-slate-800 dark:text-white">
+                                    {selectedFridge.client || `Dépôt Régional ${selectedFridge.depot}`} ({selectedFridge.depot})
+                                  </span>
+                                </div>
+                                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                                  <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase block">
+                                    🚨 {lang === 'fr' ? "Position actuelle détectée hors zone :" : "الموقع الحالي المرصود خارج النطاق :"}
+                                  </span>
+                                  <span className="font-bold text-rose-700 dark:text-rose-300">
+                                    {selectedFridge.gps?.address || `${selectedFridge.depot}, Maroc`} (+3.4 km détecté)
+                                  </span>
+                                  <div className="font-mono text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    GPS: {selectedFridge.gps ? `${selectedFridge.gps.lat.toFixed(4)}, ${selectedFridge.gps.lng.toFixed(4)}` : `${cityInfo.lat}, ${cityInfo.lng}`}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                                <span>{lang === 'fr' ? 'Dernier signal balise : ' : 'آخر إشارة : '}{selectedFridge.alertTimestamp || '2026-07-22 14:15'}</span>
+                                <span className="font-bold text-rose-600 dark:text-rose-400">Signal IoT 100%</span>
                               </p>
+
                               <button
                                 type="button"
                                 onClick={() => {
                                   setFridges(prev => prev.map(f => f.id === selectedFridge.id ? { ...f, isLocationAlert: false, alertReason: undefined } : f));
+                                  playBip(800, 0.05);
                                 }}
-                                className="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow transition-all cursor-pointer uppercase"
+                                className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl shadow-md transition-all cursor-pointer uppercase flex items-center justify-center gap-1.5"
                               >
-                                {lang === 'fr' ? 'Résoudre l\'Alerte / Valider Emplacement' : 'تأكيد الموقع وإلغاء التنبيه'}
+                                <CheckCircle className="h-4 w-4" />
+                                <span>{lang === 'fr' ? 'Résoudre l\'Alerte & Valider Emplacement' : 'تأكيد الموقع وإلغاء التنبيه'}</span>
                               </button>
                             </div>
                           ) : (
@@ -5031,14 +5059,15 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                 setFridges(prev => prev.map(f => f.id === selectedFridge.id ? {
                                   ...f,
                                   isLocationAlert: true,
-                                  alertReason: '⚠️ Déplacement suspect hors périmètre (+3.8 km détecté)',
+                                  alertReason: '⚠️ Déplacement suspect hors périmètre (+3.4 km détecté)',
                                   alertTimestamp: new Date().toISOString().replace('T', ' ').slice(0, 16)
                                 } : f));
+                                playBip(700, 0.05);
                               }}
-                              className="w-full py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                              className="w-full py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                             >
                               <AlertTriangle className="h-3.5 w-3.5" />
-                              <span>{lang === 'fr' ? 'Simuler Alerte Déplacement GPS' : 'تجربة تنبيه تغيير الموقع'}</span>
+                              <span>{lang === 'fr' ? 'Simuler Alerte Déplacement GPS' : 'تجربة تنبيه تغيير الموقع (+3.4 km)'}</span>
                             </button>
                           )}
 
@@ -5160,13 +5189,13 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                 f.status === 'stock' ? 'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400' :
                                 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
                               }`}>
-                                {f.status}
+                                {f.status === 'service' ? (lang === 'fr' ? 'Livré' : 'مسلّمة') : f.status === 'stock' ? (lang === 'fr' ? 'Non livré' : 'غير مسلّمة') : (lang === 'fr' ? 'Maintenance' : 'صيانة')}
                               </span>
                             </div>
 
                             <p className="text-[11px] text-slate-600 dark:text-slate-300 font-bold truncate flex items-center gap-1">
                               <MapPin className="h-3 w-3 text-emerald-500 shrink-0" />
-                              {f.status === 'service' ? (f.client || 'Client') : `Dépôt ${f.depot}`}
+                              {f.status === 'service' ? (f.client || (lang === 'fr' ? 'Livré' : 'مسلّمة')) : `Dépôt ${f.depot} (${lang === 'fr' ? 'Non livré' : 'غير مسلّمة'})`}
                             </p>
 
                             <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] font-mono text-slate-400 flex justify-between items-center">
@@ -8148,80 +8177,187 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
           </div>
         )}
 
-      {/* SUB-TAB 6: HISTORIQUE DES BONS (FULL SCREEN ARCHIVE & SEARCH DASHBOARD) */}
+      {/* SUB-TAB 6: HISTORIQUE DES BONS (FULL SCREEN ARCHIVE & SEARCH DASHBOARD 2026) */}
       {activeSubTab === 'historique' && (
         <div className="p-6 max-w-full mx-auto space-y-6 w-full">
           
           {/* HEADER BANNER */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 p-6 rounded-3xl text-white shadow-xl border border-sky-500/20">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <History className="h-6 w-6 text-amber-400" />
-                <h2 className="text-xl font-black tracking-tight">
-                  {lang === 'fr' ? 'Historique des Bons & Contrats' : 'سجل الأذونات والعقود المحفوظة'}
-                </h2>
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-2xl border border-amber-500/30">
+                  <History className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black tracking-tight flex items-center gap-2">
+                    {lang === 'fr' ? 'Historique des Bons & Contrats de Stock' : 'سجل الأذونات والعقود المحفوظة'}
+                    <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30">
+                      {savedBons.length} {lang === 'fr' ? 'Bons' : 'سند'}
+                    </span>
+                  </h2>
+                  <p className="text-xs text-sky-200/80 mt-0.5">
+                    {lang === 'fr' 
+                      ? "Archive centralisée, recherche multicritères, traçabilité des transferts et impression officielle."
+                      : 'إدارة وبحث وتصفح وطباعة جميع أذونات التوريد، الدخول، الخروج، الاستلام، الإخلاء وعقود الإيداع.'}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-sky-200/80">
-                {lang === 'fr' 
-                  ? "Gestion, recherche et impression de tous les Bons d'Entrée, Sortie, Prise en Charge, Décharge et Contrats de Dépôt"
-                  : 'إدارة وبحث وتصفح وطباعة جميع أذونات الدخول، الخروج، استلام، إخلاء وعقود الإيداع'}
-              </p>
             </div>
 
-            <button
-              onClick={() => { resetBonForm(); setActiveSubTab('bons'); playBip(900, 0.05); }}
-              className="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-xs transition-all shadow-lg flex items-center justify-center gap-2 shrink-0"
-            >
-              <Plus className="h-4 w-4" />
-              {lang === 'fr' ? '+ Nouveau Formulaire' : '+ تعبئة إذن جديد'}
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => { playBip(1200, 0.1); window.print(); }}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold rounded-xl text-xs transition-all border border-slate-700 flex items-center gap-1.5 shadow"
+                title={lang === 'fr' ? 'Imprimer la liste' : 'طباعة القائمة'}
+              >
+                <Printer className="h-4 w-4 text-sky-400" />
+                <span>{lang === 'fr' ? 'Imprimer Liste' : 'طباعة السجل'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { resetBonForm(); setActiveSubTab('bons'); playBip(900, 0.05); }}
+                className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-2 shrink-0 active:scale-95"
+              >
+                <Plus className="h-4 w-4" />
+                <span>{lang === 'fr' ? '+ Nouveau Formulaire' : '+ تعبئة إذن جديد'}</span>
+              </button>
+            </div>
           </div>
 
-          {/* SUMMARY METRICS RIBBON */}
+          {/* SUMMARY METRICS RIBBON (INTERACTIVE FILTER CARDS) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-3">
-            <div className="bg-white dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
-              <span className="text-[10px] text-slate-400 font-bold block uppercase">{lang === 'fr' ? 'Total Registrés' : 'إجمالي السندات'}</span>
-              <span className="text-2xl font-black text-slate-800 dark:text-white">{savedBons.length}</span>
+            {/* Total Registrés */}
+            <div 
+              onClick={() => { setBonHistoryFilter('all'); playBip(700, 0.04); }}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-1 group ${
+                bonHistoryFilter === 'all'
+                  ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-500 ring-2 ring-sky-500/20 shadow-md'
+                  : 'bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-800 hover:border-sky-400'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-400 font-bold block uppercase">{lang === 'fr' ? 'Total Registrés' : 'إجمالي السندات'}</span>
+                <FileText className="h-4 w-4 text-slate-400 group-hover:text-sky-500 transition-colors" />
+              </div>
+              <div className="text-2xl font-black text-slate-800 dark:text-white font-mono">{savedBons.length}</div>
+              <span className="text-[10px] text-slate-400 font-medium block">
+                {lang === 'fr' ? 'Tous les types' : 'كافة الأذونات'}
+              </span>
             </div>
-            <div className="bg-blue-500/10 p-4 rounded-2xl border border-blue-500/20 shadow-sm space-y-1">
-              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold block uppercase">{lang === 'fr' ? 'Bons de Livraison' : 'أذونات التوريد'}</span>
-              <span className="text-2xl font-black text-blue-600 dark:text-blue-400">{savedBons.filter(b => b.type === 'livraison').length}</span>
+
+            {/* Bons de Livraison */}
+            <div 
+              onClick={() => { setBonHistoryFilter(bonHistoryFilter === 'livraison' ? 'all' : 'livraison'); playBip(700, 0.04); }}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-1 ${
+                bonHistoryFilter === 'livraison'
+                  ? 'bg-blue-500/15 border-blue-500 ring-2 ring-blue-500/20 shadow-md'
+                  : 'bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-800 hover:border-blue-400'
+              }`}
+            >
+              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold block uppercase">{lang === 'fr' ? 'Livraisons Usine' : 'أذونات التوريد'}</span>
+              <div className="text-2xl font-black text-blue-600 dark:text-blue-400 font-mono">{savedBons.filter(b => b.type === 'livraison').length}</div>
+              <span className="text-[10px] text-slate-400 font-medium block">
+                {lang === 'fr' ? 'Usine -> Casablanca' : 'من المصنع للمستودع'}
+              </span>
             </div>
-            <div className="bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20 shadow-sm space-y-1">
+
+            {/* Bons d'Entrée */}
+            <div 
+              onClick={() => { setBonHistoryFilter(bonHistoryFilter === 'entry' ? 'all' : 'entry'); playBip(700, 0.04); }}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-1 ${
+                bonHistoryFilter === 'entry'
+                  ? 'bg-emerald-500/15 border-emerald-500 ring-2 ring-emerald-500/20 shadow-md'
+                  : 'bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-800 hover:border-emerald-400'
+              }`}
+            >
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block uppercase">{lang === 'fr' ? "Bons d'Entrée" : 'أذونات الدخول'}</span>
-              <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{savedBons.filter(b => b.type === 'entry').length}</span>
+              <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{savedBons.filter(b => b.type === 'entry').length}</div>
+              <span className="text-[10px] text-slate-400 font-medium block">
+                {lang === 'fr' ? 'Depuis Casablanca' : 'تحويل من الدار البيضاء'}
+              </span>
             </div>
-            <div className="bg-rose-500/10 p-4 rounded-2xl border border-rose-500/20 shadow-sm space-y-1">
+
+            {/* Bons de Sortie */}
+            <div 
+              onClick={() => { setBonHistoryFilter(bonHistoryFilter === 'sortie' ? 'all' : 'sortie'); playBip(700, 0.04); }}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-1 ${
+                bonHistoryFilter === 'sortie'
+                  ? 'bg-rose-500/15 border-rose-500 ring-2 ring-rose-500/20 shadow-md'
+                  : 'bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-800 hover:border-rose-400'
+              }`}
+            >
               <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold block uppercase">{lang === 'fr' ? 'Bons de Sortie' : 'أذونات الخروج'}</span>
-              <span className="text-2xl font-black text-rose-600 dark:text-rose-400">{savedBons.filter(b => b.type === 'sortie').length}</span>
+              <div className="text-2xl font-black text-rose-600 dark:text-rose-400 font-mono">{savedBons.filter(b => b.type === 'sortie').length}</div>
+              <span className="text-[10px] text-slate-400 font-medium block">
+                {lang === 'fr' ? 'Vers Réseau Vente' : 'لشبكة التوزيع'}
+              </span>
             </div>
-            <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20 shadow-sm space-y-1">
+
+            {/* Prises & Décharges */}
+            <div 
+              onClick={() => { setBonHistoryFilter(bonHistoryFilter === 'prise_en_charge' ? 'all' : 'prise_en_charge'); playBip(700, 0.04); }}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-1 ${
+                bonHistoryFilter === 'prise_en_charge' || bonHistoryFilter === 'decharge'
+                  ? 'bg-amber-500/15 border-amber-500 ring-2 ring-amber-500/20 shadow-md'
+                  : 'bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-800 hover:border-amber-400'
+              }`}
+            >
               <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold block uppercase">{lang === 'fr' ? 'Prises & Décharges' : 'استلام وإخلاء'}</span>
-              <span className="text-2xl font-black text-amber-600 dark:text-amber-400">{savedBons.filter(b => b.type === 'prise_en_charge' || b.type === 'decharge').length}</span>
+              <div className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">{savedBons.filter(b => b.type === 'prise_en_charge' || b.type === 'decharge').length}</div>
+              <span className="text-[10px] text-slate-400 font-medium block">
+                {lang === 'fr' ? 'Clients Directs' : 'تسليم للعملاء'}
+              </span>
             </div>
-            <div className="bg-cyan-500/10 p-4 rounded-2xl border border-cyan-500/20 shadow-sm space-y-1">
+
+            {/* Contrats Dépôt */}
+            <div 
+              onClick={() => { setBonHistoryFilter(bonHistoryFilter === 'contrat_depot' ? 'all' : 'contrat_depot'); playBip(700, 0.04); }}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-1 ${
+                bonHistoryFilter === 'contrat_depot'
+                  ? 'bg-cyan-500/15 border-cyan-500 ring-2 ring-cyan-500/20 shadow-md'
+                  : 'bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-800 hover:border-cyan-400'
+              }`}
+            >
               <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold block uppercase">{lang === 'fr' ? 'Contrats Dépôt' : 'عقود الإيداع'}</span>
-              <span className="text-2xl font-black text-cyan-600 dark:text-cyan-400">{savedBons.filter(b => b.type === 'contrat_depot').length}</span>
+              <div className="text-2xl font-black text-cyan-600 dark:text-cyan-400 font-mono">{savedBons.filter(b => b.type === 'contrat_depot').length}</div>
+              <span className="text-[10px] text-slate-400 font-medium block">
+                {lang === 'fr' ? 'Engagements légaux' : 'عقود رسمية'}
+              </span>
             </div>
-            <div className="bg-indigo-500/10 p-4 rounded-2xl border border-indigo-500/20 shadow-sm space-y-1">
-              <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold block uppercase">{lang === 'fr' ? 'Dépôts Régionaux' : 'المستودعات الجهوية'}</span>
-              <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{savedBons.filter(b => b.type === 'depot_regional').length}</span>
+
+            {/* Dépôts Régionaux */}
+            <div 
+              onClick={() => { setBonHistoryFilter(bonHistoryFilter === 'depot_regional' ? 'all' : 'depot_regional'); playBip(700, 0.04); }}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-1 ${
+                bonHistoryFilter === 'depot_regional'
+                  ? 'bg-indigo-500/15 border-indigo-500 ring-2 ring-indigo-500/20 shadow-md'
+                  : 'bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+              }`}
+            >
+              <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold block uppercase">{lang === 'fr' ? 'Dépôts Régionaux' : 'المستودعات'}</span>
+              <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">{savedBons.filter(b => b.type === 'depot_regional').length}</div>
+              <span className="text-[10px] text-slate-400 font-medium block">
+                {lang === 'fr' ? 'Transferts inter-dépôts' : 'بين المستودعات'}
+              </span>
             </div>
           </div>
 
           {/* SEARCH AND FILTERS BAR */}
           <div className="p-4 bg-white dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
             <div className="relative w-full md:w-96">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder={lang === 'fr' ? 'Rechercher par N°, client, vendeur, série, ville...' : 'بحث برقم السند، الزبون، البائع، رقم التسلسل...'}
+                placeholder={lang === 'fr' ? 'Rechercher par N°, client, vendeur, série, ville, camion...' : 'بحث برقم السند، الزبون، البائع، رقم التسلسل...'}
                 value={bonHistorySearch}
                 onChange={(e) => setBonHistorySearch(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full pl-9 pr-8 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
               />
               {bonHistorySearch && (
                 <button
+                  type="button"
                   onClick={() => setBonHistorySearch('')}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white"
                 >
@@ -8230,143 +8366,366 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl text-xs font-bold w-full md:w-auto">
-              <button
-                onClick={() => setBonHistoryFilter('all')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  bonHistoryFilter === 'all'
-                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-black'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Tous ({savedBons.length})
-              </button>
-              <button
-                onClick={() => setBonHistoryFilter('livraison')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  bonHistoryFilter === 'livraison'
-                    ? 'bg-blue-600 text-white shadow-sm font-black'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Livraison ({savedBons.filter(b => b.type === 'livraison').length})
-              </button>
-              <button
-                onClick={() => setBonHistoryFilter('entry')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  bonHistoryFilter === 'entry'
-                    ? 'bg-emerald-600 text-white shadow-sm font-black'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Entrée ({savedBons.filter(b => b.type === 'entry').length})
-              </button>
-              <button
-                onClick={() => setBonHistoryFilter('sortie')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  bonHistoryFilter === 'sortie'
-                    ? 'bg-rose-600 text-white shadow-sm font-black'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Sortie ({savedBons.filter(b => b.type === 'sortie').length})
-              </button>
-              <button
-                onClick={() => setBonHistoryFilter('prise_en_charge')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  bonHistoryFilter === 'prise_en_charge'
-                    ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Prise Charge ({savedBons.filter(b => b.type === 'prise_en_charge').length})
-              </button>
-              <button
-                onClick={() => setBonHistoryFilter('decharge')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  bonHistoryFilter === 'decharge'
-                    ? 'bg-purple-600 text-white shadow-sm font-black'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Décharge ({savedBons.filter(b => b.type === 'decharge').length})
-              </button>
-              <button
-                onClick={() => setBonHistoryFilter('contrat_depot')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  bonHistoryFilter === 'contrat_depot'
-                    ? 'bg-cyan-600 text-white shadow-sm font-black'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Contrat Dépôt ({savedBons.filter(b => b.type === 'contrat_depot').length})
-              </button>
-              <button
-                onClick={() => setBonHistoryFilter('depot_regional')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  bonHistoryFilter === 'depot_regional'
-                    ? 'bg-indigo-600 text-white shadow-sm font-black'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Dépôts Régionaux ({savedBons.filter(b => b.type === 'depot_regional').length})
-              </button>
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+              {/* Filter Pills */}
+              <div className="flex flex-wrap items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl text-xs font-bold">
+                <button
+                  onClick={() => setBonHistoryFilter('all')}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                    bonHistoryFilter === 'all'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Tous ({savedBons.length})
+                </button>
+                <button
+                  onClick={() => setBonHistoryFilter('livraison')}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                    bonHistoryFilter === 'livraison'
+                      ? 'bg-blue-600 text-white shadow-sm font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Livraison ({savedBons.filter(b => b.type === 'livraison').length})
+                </button>
+                <button
+                  onClick={() => setBonHistoryFilter('entry')}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                    bonHistoryFilter === 'entry'
+                      ? 'bg-emerald-600 text-white shadow-sm font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Entrée ({savedBons.filter(b => b.type === 'entry').length})
+                </button>
+                <button
+                  onClick={() => setBonHistoryFilter('sortie')}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                    bonHistoryFilter === 'sortie'
+                      ? 'bg-rose-600 text-white shadow-sm font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Sortie ({savedBons.filter(b => b.type === 'sortie').length})
+                </button>
+                <button
+                  onClick={() => setBonHistoryFilter('prise_en_charge')}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                    bonHistoryFilter === 'prise_en_charge'
+                      ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Prise Charge ({savedBons.filter(b => b.type === 'prise_en_charge').length})
+                </button>
+                <button
+                  onClick={() => setBonHistoryFilter('decharge')}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                    bonHistoryFilter === 'decharge'
+                      ? 'bg-purple-600 text-white shadow-sm font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Décharge ({savedBons.filter(b => b.type === 'decharge').length})
+                </button>
+                <button
+                  onClick={() => setBonHistoryFilter('contrat_depot')}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                    bonHistoryFilter === 'contrat_depot'
+                      ? 'bg-cyan-600 text-white shadow-sm font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Contrat ({savedBons.filter(b => b.type === 'contrat_depot').length})
+                </button>
+                <button
+                  onClick={() => setBonHistoryFilter('depot_regional')}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                    bonHistoryFilter === 'depot_regional'
+                      ? 'bg-indigo-600 text-white shadow-sm font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Dépôts ({savedBons.filter(b => b.type === 'depot_regional').length})
+                </button>
+              </div>
+
+              {/* View Switcher: Table vs Cards */}
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => { setBonHistoryViewMode('table'); playBip(800, 0.04); }}
+                  className={`p-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    bonHistoryViewMode === 'table'
+                      ? 'bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                  title={lang === 'fr' ? 'Vue Tableau' : 'عرض جدول'}
+                >
+                  <List className="h-4 w-4" />
+                  <span className="hidden sm:inline">{lang === 'fr' ? 'Tableau' : 'جدول'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setBonHistoryViewMode('cards'); playBip(800, 0.04); }}
+                  className={`p-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    bonHistoryViewMode === 'cards'
+                      ? 'bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm font-black'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                  title={lang === 'fr' ? 'Vue Cartes' : 'عرض بطاقات'}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  <span className="hidden sm:inline">{lang === 'fr' ? 'Cartes' : 'بطاقات'}</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* GRID OF SAVED BONS CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {savedBons
-              .filter(bon => {
-                if (bonHistoryFilter !== 'all' && bon.type !== bonHistoryFilter) return false;
-                if (!bonHistorySearch.trim()) return true;
-                const query = bonHistorySearch.toLowerCase();
-                const bonNoMatch = (bon.bonNo || '').toLowerCase().includes(query);
-                const chefMatch = (bon.chefSecteur || '').toLowerCase().includes(query);
-                const vendeurMatch = (bon.nomVendeur || '').toLowerCase().includes(query);
-                const clientMatch = `${bon.nomClient || ''} ${bon.prenomClient || ''}`.toLowerCase().includes(query);
-                const activiteMatch = (bon.activiteClient || '').toLowerCase().includes(query);
-                const congelateurMatch = (bon.congelateurNo || '').toLowerCase().includes(query);
-                const depotMatch = (bon.depot || '').toLowerCase().includes(query);
-                const dateMatch = (bon.date || '').toLowerCase().includes(query);
-                const apSerials = Array.isArray(bon.apRows) ? bon.apRows.join(' ').toLowerCase() : '';
-                const agSerials = Array.isArray(bon.agRows) ? bon.agRows.join(' ').toLowerCase() : '';
-                const asSerials = Array.isArray(bon.asRows) ? bon.asRows.join(' ').toLowerCase() : '';
-                return bonNoMatch || chefMatch || vendeurMatch || clientMatch || activiteMatch || congelateurMatch || depotMatch || dateMatch || apSerials.includes(query) || agSerials.includes(query) || asSerials.includes(query);
-              })
-              .length === 0 ? (
-              <div className="col-span-full text-center py-12 bg-white dark:bg-slate-850 rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 text-slate-400 space-y-2">
-                <FileText className="h-10 w-10 mx-auto text-slate-300" />
-                <p className="font-medium text-sm">
-                  {lang === 'fr' ? "Aucun bon correspondant dans l'historique." : 'لا يوجد أي إذن أومستند مطابق في السجل.'}
-                </p>
-                <button
-                  onClick={() => { resetBonForm(); setActiveSubTab('bons'); playBip(900, 0.05); }}
-                  className="px-4 py-2 bg-sky-500 text-white font-bold rounded-xl text-xs hover:bg-sky-600 transition-all shadow"
-                >
-                  {lang === 'fr' ? '+ Créer un Nouveau Bon' : '+ إنشاء إذن جديد'}
-                </button>
-              </div>
-            ) : (
-              savedBons
-                .filter(bon => {
-                  if (bonHistoryFilter !== 'all' && bon.type !== bonHistoryFilter) return false;
-                  if (!bonHistorySearch.trim()) return true;
-                  const query = bonHistorySearch.toLowerCase();
-                  const bonNoMatch = (bon.bonNo || '').toLowerCase().includes(query);
-                  const chefMatch = (bon.chefSecteur || '').toLowerCase().includes(query);
-                  const vendeurMatch = (bon.nomVendeur || '').toLowerCase().includes(query);
-                  const clientMatch = `${bon.nomClient || ''} ${bon.prenomClient || ''}`.toLowerCase().includes(query);
-                  const activiteMatch = (bon.activiteClient || '').toLowerCase().includes(query);
-                  const congelateurMatch = (bon.congelateurNo || '').toLowerCase().includes(query);
-                  const depotMatch = (bon.depot || '').toLowerCase().includes(query);
-                  const dateMatch = (bon.date || '').toLowerCase().includes(query);
-                  const apSerials = Array.isArray(bon.apRows) ? bon.apRows.join(' ').toLowerCase() : '';
-                  const agSerials = Array.isArray(bon.agRows) ? bon.agRows.join(' ').toLowerCase() : '';
-                  const asSerials = Array.isArray(bon.asRows) ? bon.asRows.join(' ').toLowerCase() : '';
-                  return bonNoMatch || chefMatch || vendeurMatch || clientMatch || activiteMatch || congelateurMatch || depotMatch || dateMatch || apSerials.includes(query) || agSerials.includes(query) || asSerials.includes(query);
-                })
-                .map(bon => {
+          {/* DYNAMIC VIEW: TABLE OR CARDS */}
+          {(() => {
+            const filtered = savedBons.filter(bon => {
+              if (bonHistoryFilter !== 'all' && bon.type !== bonHistoryFilter) return false;
+              if (!bonHistorySearch.trim()) return true;
+              const query = bonHistorySearch.toLowerCase();
+              const bonNoMatch = (bon.bonNo || '').toLowerCase().includes(query);
+              const chefMatch = (bon.chefSecteur || '').toLowerCase().includes(query);
+              const vendeurMatch = (bon.nomVendeur || '').toLowerCase().includes(query);
+              const clientMatch = `${bon.nomClient || ''} ${bon.prenomClient || ''}`.toLowerCase().includes(query);
+              const activiteMatch = (bon.activiteClient || '').toLowerCase().includes(query);
+              const congelateurMatch = (bon.congelateurNo || '').toLowerCase().includes(query);
+              const depotMatch = (bon.depot || '').toLowerCase().includes(query);
+              const dateMatch = (bon.date || '').toLowerCase().includes(query);
+              const camionMatch = (bon.camionTransfert || '').toLowerCase().includes(query);
+              const apSerials = Array.isArray(bon.apRows) ? bon.apRows.join(' ').toLowerCase() : '';
+              const agSerials = Array.isArray(bon.agRows) ? bon.agRows.join(' ').toLowerCase() : '';
+              const asSerials = Array.isArray(bon.asRows) ? bon.asRows.join(' ').toLowerCase() : '';
+              return bonNoMatch || chefMatch || vendeurMatch || clientMatch || activiteMatch || congelateurMatch || depotMatch || dateMatch || camionMatch || apSerials.includes(query) || agSerials.includes(query) || asSerials.includes(query);
+            });
+
+            if (filtered.length === 0) {
+              return (
+                <div className="text-center py-16 bg-white dark:bg-slate-850 rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 text-slate-400 space-y-3">
+                  <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl w-14 h-14 mx-auto flex items-center justify-center text-slate-400">
+                    <FileText className="h-7 w-7" />
+                  </div>
+                  <p className="font-bold text-sm text-slate-600 dark:text-slate-300">
+                    {lang === 'fr' ? "Aucun bon correspondant dans l'historique." : 'لا يوجد أي إذن أومستند مطابق في السجل.'}
+                  </p>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                    {lang === 'fr' ? "Essayez de modifier vos critères de recherche ou créez un nouveau bon de transfert." : "يرجى تعديل مصطلحات البحث أو تعبئة إذن جديد."}
+                  </p>
+                  <button
+                    onClick={() => { resetBonForm(); setActiveSubTab('bons'); playBip(900, 0.05); }}
+                    className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl text-xs transition-all shadow-md inline-flex items-center gap-1.5"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>{lang === 'fr' ? '+ Créer un Nouveau Bon' : '+ إنشاء إذن جديد'}</span>
+                  </button>
+                </div>
+              );
+            }
+
+            // TABLE VIEW
+            if (bonHistoryViewMode === 'table') {
+              return (
+                <div className="bg-white dark:bg-slate-850 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                        <tr>
+                          <th className="py-3.5 px-4">{lang === 'fr' ? 'N° Bon & Date' : 'رقم السند والتاريخ'}</th>
+                          <th className="py-3.5 px-4">{lang === 'fr' ? 'Type de Document' : 'نوع السند'}</th>
+                          <th className="py-3.5 px-4">{lang === 'fr' ? 'Dépôt / Ville' : 'المستودع / المدينة'}</th>
+                          <th className="py-3.5 px-4">{lang === 'fr' ? 'Destinataire / Tiers' : 'العميل / المستلم'}</th>
+                          <th className="py-3.5 px-4">{lang === 'fr' ? 'Appareils (AP / AG / AS)' : 'الثلاجات المشمولة'}</th>
+                          <th className="py-3.5 px-4">{lang === 'fr' ? 'Visas Signés' : 'التأشيرات'}</th>
+                          <th className="py-3.5 px-4 text-right">{lang === 'fr' ? 'Actions' : 'إجراءات'}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium">
+                        {filtered.map(bon => {
+                          const apSerials = (bon.apRows || []).filter((s: string) => s && s.trim() !== '');
+                          const agSerials = (bon.agRows || []).filter((s: string) => s && s.trim() !== '');
+                          const asSerials = (bon.asRows || []).filter((s: string) => s && s.trim() !== '');
+                          const totalCount = apSerials.length + agSerials.length + asSerials.length;
+                          const visasCount = Object.values(bon.visasSigned || {}).filter((v: any) => Boolean(v) && v !== '').length;
+
+                          const typeBadgeClass =
+                            bon.type === 'livraison'
+                              ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700/50'
+                              : bon.type === 'entry' 
+                              ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/50' 
+                              : bon.type === 'sortie'
+                              ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700/50'
+                              : bon.type === 'prise_en_charge'
+                              ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/50'
+                              : bon.type === 'decharge'
+                              ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-700/50'
+                              : bon.type === 'depot_regional'
+                              ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-800 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700/50'
+                              : 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700/50';
+
+                          const typeLabel =
+                            bon.type === 'livraison'
+                              ? "BON LIVRAISON"
+                              : bon.type === 'entry'
+                              ? "BON ENTRÉE"
+                              : bon.type === 'sortie'
+                              ? "BON SORTIE"
+                              : bon.type === 'prise_en_charge'
+                              ? "PRISE EN CHARGE"
+                              : bon.type === 'decharge'
+                              ? "DÉCHARGE"
+                              : bon.type === 'depot_regional'
+                              ? "DÉPÔT RÉGIONAL"
+                              : "CONTRAT DÉPÔT";
+
+                          return (
+                            <tr key={bon.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                              {/* Bon No & Date */}
+                              <td className="py-3.5 px-4">
+                                <span className="font-mono font-black text-rose-600 dark:text-rose-400 text-xs block">
+                                  N° {bon.bonNo}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
+                                  <Clock className="h-3 w-3" />
+                                  {bon.date}
+                                </span>
+                              </td>
+
+                              {/* Document Type Badge */}
+                              <td className="py-3.5 px-4">
+                                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border inline-block ${typeBadgeClass}`}>
+                                  {typeLabel}
+                                </span>
+                              </td>
+
+                              {/* Depot / City */}
+                              <td className="py-3.5 px-4">
+                                <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold inline-block">
+                                  {bon.depot || bon.ville || 'Casablanca'}
+                                </span>
+                              </td>
+
+                              {/* Target / Beneficiary */}
+                              <td className="py-3.5 px-4">
+                                {bon.type === 'livraison' ? (
+                                  <div>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs truncate max-w-[170px]">
+                                      Usine &rarr; Casablanca
+                                    </span>
+                                    <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium block truncate max-w-[170px]">
+                                      {bon.camionTransfert || 'Camion Transfert'}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs truncate max-w-[170px]">
+                                      {bon.nomClient ? `${bon.nomClient} ${bon.prenomClient || ''}` : bon.nomVendeur || '--'}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 block truncate max-w-[170px]">
+                                      {bon.chefSecteur || bon.activiteClient || '--'}
+                                    </span>
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* Fridges summary */}
+                              <td className="py-3.5 px-4 font-mono text-xs">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {apSerials.length > 0 && (
+                                    <span className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 rounded font-bold text-[10px]">
+                                      AP:{apSerials.length}
+                                    </span>
+                                  )}
+                                  {agSerials.length > 0 && (
+                                    <span className="px-1.5 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded font-bold text-[10px]">
+                                      AG:{agSerials.length}
+                                    </span>
+                                  )}
+                                  {asSerials.length > 0 && (
+                                    <span className="px-1.5 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 rounded font-bold text-[10px]">
+                                      AS:{asSerials.length}
+                                    </span>
+                                  )}
+                                  {bon.congelateurNo && (
+                                    <span className="px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded font-bold text-[10px]">
+                                      {bon.congelateurNo}
+                                    </span>
+                                  )}
+                                  {totalCount === 0 && !bon.congelateurNo && (
+                                    <span className="text-slate-400 italic text-[10px] font-sans">0 appareil</span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Visas */}
+                              <td className="py-3.5 px-4">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  visasCount >= 4 
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400' 
+                                    : 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
+                                }`}>
+                                  {visasCount}/5 Visas
+                                </span>
+                              </td>
+
+                              {/* Action Buttons */}
+                              <td className="py-3.5 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setViewingBonModal(bon)}
+                                    className="p-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 rounded-lg text-xs font-bold transition-all shadow cursor-pointer"
+                                    title={lang === 'fr' ? 'Aperçu Plein Écran' : 'معاينة'}
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => { loadSavedBon(bon); playBip(900, 0.05); }}
+                                    className="p-1.5 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 text-sky-700 dark:text-sky-300 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                    title={lang === 'fr' ? 'Éditer' : 'تعديل'}
+                                  >
+                                    <Edit3 className="h-3.5 w-3.5" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePrintSavedBon(bon)}
+                                    className="p-1.5 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 text-amber-800 dark:text-amber-300 rounded-lg transition-all cursor-pointer"
+                                    title={lang === 'fr' ? 'Imprimer le Bon' : 'طباعة'}
+                                  >
+                                    <Printer className="h-3.5 w-3.5" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteBon(bon.id)}
+                                    className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all cursor-pointer"
+                                    title={lang === 'fr' ? 'Supprimer' : 'حذف'}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            }
+
+            // CARDS VIEW
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filtered.map(bon => {
                   const apSerials = (bon.apRows || []).filter((s: string) => s && s.trim() !== '');
                   const agSerials = (bon.agRows || []).filter((s: string) => s && s.trim() !== '');
                   const asSerials = (bon.asRows || []).filter((s: string) => s && s.trim() !== '');
@@ -8423,7 +8782,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                               N° {bon.bonNo}
                             </span>
                             <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full font-bold text-slate-600 dark:text-slate-300">
-                              Dépôt {bon.depot || 'Casablanca'}
+                              Dépôt {bon.depot || bon.ville || 'Casablanca'}
                             </span>
                           </div>
 
@@ -8467,7 +8826,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                             <span className="text-slate-600 dark:text-slate-400 font-bold">
                               AP: <b className="text-slate-900 dark:text-white">{apSerials.length}</b> | AG: <b className="text-slate-900 dark:text-white">{agSerials.length}</b> | AS: <b className="text-slate-900 dark:text-white">{asSerials.length}</b>
                             </span>
-                            <span className={`text-xs font-bold ${visasCount === 5 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            <span className={`text-xs font-bold ${visasCount >= 4 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                               {visasCount}/5 Visas
                             </span>
                           </div>
@@ -8494,7 +8853,12 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     AS: {s}
                                   </span>
                                 ))}
-                                {totalCount === 0 && (
+                                {bon.congelateurNo && (
+                                  <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-mono text-xs rounded-md font-bold">
+                                    {bon.congelateurType || 'REF'}: {bon.congelateurNo}
+                                  </span>
+                                )}
+                                {totalCount === 0 && !bon.congelateurNo && (
                                   <span className="text-slate-400 italic">Aucun numéro enregistré</span>
                                 )}
                               </div>
@@ -8508,7 +8872,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                         <button
                           type="button"
                           onClick={() => setExpandedBonId(isExpanded ? null : bon.id)}
-                          className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center gap-1 font-bold shrink-0"
+                          className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center gap-1 font-bold shrink-0 cursor-pointer"
                         >
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                           {isExpanded ? 'Réduire' : 'Détails'}
@@ -8519,7 +8883,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                           <button
                             type="button"
                             onClick={() => { loadSavedBon(bon); playBip(900, 0.05); }}
-                            className="px-2 py-1 sm:px-2.5 sm:py-1.5 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 text-sky-700 dark:text-sky-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                            className="px-2 py-1 sm:px-2.5 sm:py-1.5 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 text-sky-700 dark:text-sky-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                             title="Ouvrir dans le formulaire"
                           >
                             <Edit3 className="h-3.5 w-3.5" />
@@ -8530,7 +8894,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                           <button
                             type="button"
                             onClick={() => setViewingBonModal(bon)}
-                            className="px-2 py-1 sm:px-2.5 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow"
+                            className="px-2 py-1 sm:px-2.5 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow cursor-pointer"
                             title="Aperçu Plein Écran"
                           >
                             <Eye className="h-3.5 w-3.5 text-amber-400" />
@@ -8541,7 +8905,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                           <button
                             type="button"
                             onClick={() => handlePrintSavedBon(bon)}
-                            className="p-1.5 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 text-amber-800 dark:text-amber-300 rounded-xl transition-all shrink-0"
+                            className="p-1.5 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 text-amber-800 dark:text-amber-300 rounded-xl transition-all shrink-0 cursor-pointer"
                             title="Imprimer le Bon"
                           >
                             <Printer className="h-4 w-4" />
@@ -8551,7 +8915,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                           <button
                             type="button"
                             onClick={() => handleDeleteBon(bon.id)}
-                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-all shrink-0"
+                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-all shrink-0 cursor-pointer"
                             title="Supprimer"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -8560,9 +8924,10 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       </div>
                     </div>
                   );
-                })
-            )}
-          </div>
+                })}
+              </div>
+            );
+          })()}
 
         </div>
       )}

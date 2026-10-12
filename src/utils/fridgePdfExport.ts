@@ -60,7 +60,12 @@ export function generateFridgePdfReport(fridge: FridgePdfData, lang: 'fr' | 'ar'
       : (fridge.type === 'chest' || fridge.type === 'AP') 
         ? 'AP (Coffre Horizontal - 300 L)' 
         : 'AG (Armoire Vitrée Verticale - 400 L)';
-  const statusLabel = fridge.status === 'service' ? 'EN SERVICE (CLIENT)' : fridge.status === 'stock' ? 'EN STOCK (DÉPÔT)' : 'EN MAINTENANCE';
+  const statusLabel = 
+    fridge.status === 'service' 
+      ? 'LIVRÉ (Chez le Client)' 
+      : fridge.status === 'stock' 
+        ? 'NON LIVRÉ (En Stock / Dépôt)' 
+        : 'EN MAINTENANCE (Atelier)';
   
   const deliveryDays = fridge.deliveryDaysCount || 64;
   const totalLiters = fridge.totalQuantityDeliveredLiters || Math.round(deliveryDays * 38);
@@ -127,64 +132,80 @@ export function generateFridgePdfReport(fridge: FridgePdfData, lang: 'fr' | 'ar'
   if (fridge.isLocationAlert) {
     doc.setFillColor(254, 242, 242);
     doc.setDrawColor(239, 68, 68);
-    doc.roundedRect(14, y, 182, 14, 2, 2, 'FD');
+    doc.setLineWidth(0.5);
+    doc.roundedRect(14, y, 182, 22, 2.5, 2.5, 'FD');
 
     doc.setTextColor(185, 28, 28);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text("🚨 ALERTE GPS : DÉPLACEMENT HORS ZONE NON AUTORISÉ DÉTECTÉ !", 18, y + 6);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(fridge.alertReason || "Changement de position GPS anormal enregistré par les capteurs IoT.", 18, y + 11);
+    doc.setFontSize(9.5);
+    doc.text("🚨 ALERTE GPS CRITIQUE : DÉPLACEMENT HORS PÉRIMÈTRE NON AUTORISÉ DÉTECTÉ !", 18, y + 6);
 
-    y += 18;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(153, 27, 27);
+    doc.text("• Origine Autorisée (Client / Dépôt):", 18, y + 11.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(15, 23, 42);
+    doc.text(fridge.client ? `${fridge.client} (${fridge.depot})` : `Dépôt Régional ${fridge.depot}`, 72, y + 11.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(153, 27, 27);
+    doc.text("• Position Actuelle Détectée:", 18, y + 16.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(15, 23, 42);
+    const alertCoords = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    doc.text(`${fridge.alertReason || '⚠️ Déplacement suspect hors périmètre (+3.4 km détecté)'} | GPS: ${alertCoords}`, 72, y + 16.5);
+
+    y += 26;
   }
 
   // Section 1: Information Appareil & Localisation GPS
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(2, 132, 199);
-  doc.text("1. CARACTÉRISTIQUES D\'EXPLOITATION & LOCALISATION GPS", 14, y);
+  doc.text("1. CARACTÉRISTIQUES D'EXPLOITATION & LOCALISATION GPS", 14, y);
   doc.line(14, y + 2, 196, y + 2);
 
   y += 7;
 
-  // Grid Table 1
-  const col1 = 16;
-  const col2 = 112;
-
-  doc.setFontSize(9);
-  doc.setTextColor(15, 23, 42);
-
-  const drawRow = (
+  // Grid Table with zero collision guarantee
+  const drawCleanRow = (
     label1: string,
     val1: string,
     label2: string,
     val2: string,
     currentY: number,
-    val1Offset = 36,
-    val2Offset = 42,
-    c1 = col1,
-    c2 = col2
+    isStriped = false
   ) => {
-    doc.setFillColor(241, 245, 249);
-    doc.rect(14, currentY - 4, 182, 7, 'F');
+    if (isStriped) {
+      doc.setFillColor(248, 250, 252);
+      doc.rect(14, currentY - 4.5, 182, 7.5, 'F');
+    }
+    // Left column: label from 17 to 58, value from 62 to 103
     doc.setFont('helvetica', 'bold');
-    doc.text(label1, c1, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(val1, c1 + val1Offset, currentY);
+    doc.setFontSize(8.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(label1, 17, currentY);
 
     doc.setFont('helvetica', 'bold');
-    doc.text(label2, c2, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(val2, c2 + val2Offset, currentY);
+    doc.setTextColor(15, 23, 42);
+    doc.text(doc.splitTextToSize(val1, 41)[0] || '', 62, currentY);
+
+    // Right column: label from 106 to 154, value from 156 to 194
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(71, 85, 105);
+    doc.text(label2, 106, currentY);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(doc.splitTextToSize(val2, 40)[0] || '', 156, currentY);
   };
 
-  drawRow("N° de Série:", fridge.serialNumber, "Statut de Service:", statusLabel, y); y += 8;
-  drawRow("Type d'Appareil:", categoryLabel, "Dépôt Régional:", fridge.depot, y); y += 8;
-  drawRow("Client Attribué:", fridge.client || "Dépôt / Non attribué", "Chauffeur Référent:", fridge.driverId || "DRV-001 (Amina Tazi)", y); y += 8;
-  drawRow("Coordonnées GPS:", `${lat.toFixed(4)}, ${lng.toFixed(4)}`, "Date d'Installation:", installation, y); y += 8;
-  drawRow("Adresse Physique:", address, "Dernier Entretien:", fridge.lastServiceDate || '2026-05-10', y); y += 12;
+  drawCleanRow("N° de Série:", fridge.serialNumber, "Statut Opérationnel:", statusLabel, y, false); y += 8;
+  drawCleanRow("Type d'Appareil:", categoryLabel, "Dépôt Régional:", fridge.depot, y, true); y += 8;
+  drawCleanRow("Client Attribué:", fridge.client || "Dépôt / Non attribué", "Chauffeur Référent:", fridge.driverId || "DRV-001 (Amina Tazi)", y, false); y += 8;
+  drawCleanRow("Coordonnées GPS:", `${lat.toFixed(4)}, ${lng.toFixed(4)}`, "Date d'Installation:", installation, y, true); y += 8;
+  drawCleanRow("Adresse Physique:", address, "Dernier Entretien:", fridge.lastServiceDate || '2026-05-10', y, false); y += 12;
 
   // Section 2: Métriques & Statistiques de Livraison (2026)
   doc.setFont('helvetica', 'bold');
@@ -232,7 +253,7 @@ export function generateFridgePdfReport(fridge: FridgePdfData, lang: 'fr' | 'ar'
 
   y += 28;
 
-  // Section 3: Spécifications d'Exploitation & Normes Logistiques
+  // Section 3: Spécifications d'Exploitation & Normes Logistiques (Zero Overlap Guaranteed)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(2, 132, 199);
@@ -241,9 +262,9 @@ export function generateFridgePdfReport(fridge: FridgePdfData, lang: 'fr' | 'ar'
 
   y += 8;
 
-  drawRow("Marque Commerciale:", "ZAHI GLACES S.A.R.L", "Capacité Volumétrique:", fridge.type === 'AS' ? '500 Litres (Spécial)' : (fridge.type === 'chest' || fridge.type === 'AP' ? '300 Litres (Coffre)' : '400 Litres (Armoire)'), y, 40, 46); y += 8;
-  drawRow("Type de Fluide:", "R404A Écologique", "État Général Matériel:", "Conforme / Excellent état", y, 40, 46); y += 8;
-  drawRow("Périodicité d'Entretien:", "Semestriel (Tous les 6 mois)", "Prochaine Révision Prévue:", "Novembre 2026", y, 40, 46); y += 14;
+  drawCleanRow("Marque Commerciale:", "ZAHI GLACES S.A.R.L", "Capacité Volumétrique:", fridge.type === 'AS' ? '500 Litres (Spécial)' : (fridge.type === 'chest' || fridge.type === 'AP' ? '300 Litres (Coffre)' : '400 Litres (Armoire)'), y, false); y += 8;
+  drawCleanRow("Type de Fluide:", "R404A Écologique", "État Général Matériel:", "Conforme / Excellent", y, true); y += 8;
+  drawCleanRow("Périodicité d'Entretien:", "Semestriel (Tous les 6 mois)", "Prochaine Révision:", "Novembre 2026", y, false); y += 14;
 
   // Section 4: Historique Récent des Livraisons
   doc.setFont('helvetica', 'bold');

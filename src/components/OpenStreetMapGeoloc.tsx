@@ -348,7 +348,13 @@ export default function OpenStreetMapGeoloc({
 
       const isAlert = !!f.isLocationAlert;
       const statusColor = isAlert ? '#ef4444' : f.status === 'service' ? '#10b981' : f.status === 'stock' ? '#0284c7' : '#f59e0b';
-      const statusLabel = isAlert ? '🚨 ALERTE GPS' : f.status === 'service' ? 'En Service' : f.status === 'stock' ? 'En Stock' : 'Maintenance';
+      const statusLabel = isAlert 
+        ? (lang === 'fr' ? '🚨 ALERTE GPS' : '🚨 إنذار GPS') 
+        : f.status === 'service' 
+          ? (lang === 'fr' ? 'Livré' : 'مسلّمة') 
+          : f.status === 'stock' 
+            ? (lang === 'fr' ? 'Non livré' : 'غير مسلّمة') 
+            : (lang === 'fr' ? 'Maintenance' : 'صيانة');
       const isSelected = f.id === selectedFridgeId;
       const categoryBadge = f.type === 'AS' ? 'AS (500L)' : (f.type === 'chest' || f.type === 'AP') ? 'AP (300L)' : 'AG (400L)';
 
@@ -416,7 +422,7 @@ export default function OpenStreetMapGeoloc({
       const totalCartons = f.totalCartonsDelivered || Math.round(totalLiters / 4);
 
       const popupContent = `
-        <div style="font-family: system-ui, sans-serif; padding: 10px; min-width: 250px; color: #0f172a;">
+        <div style="font-family: system-ui, sans-serif; padding: 10px; min-width: 270px; max-width: 310px; color: #0f172a;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
             <div>
               <span style="font-family: monospace; font-size: 13px; font-weight: 900; color: #0f172a;">${f.serialNumber}</span>
@@ -432,13 +438,28 @@ export default function OpenStreetMapGeoloc({
           </div>
 
           ${isAlert ? `
-            <div style="background-color: #fef2f2; border: 1px solid #fca5a5; padding: 6px 8px; border-radius: 8px; margin-bottom: 8px; font-size: 10px; color: #991b1b; font-weight: 700;">
-              🚨 <b>ALERTE Mouvement Suspect GPS:</b><br/>${f.alertReason || 'Changement de position hors zone client détecté.'}
+            <div style="background-color: #fef2f2; border: 1.5px solid #f87171; padding: 8px 10px; border-radius: 10px; margin-bottom: 8px; font-size: 10px; color: #991b1b; line-height: 1.45;">
+              <div style="font-weight: 900; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; color: #dc2626;">
+                ⚠️ <span>${f.alertReason || 'Déplacement suspect hors périmètre (+3.4 km détecté)'}</span>
+              </div>
+              <div style="background: #ffffff; padding: 6px 8px; border-radius: 6px; border: 1px solid #fecaca; margin-top: 4px; font-size: 9.5px; color: #1e293b;">
+                <div style="margin-bottom: 4px;">
+                  <b style="color: #0369a1;">📍 ${lang === 'fr' ? "Emplacement d'origine :" : "الموقع الأصلي المعتمد :"}</b><br/>
+                  <span style="font-weight: 700;">${f.client || `Dépôt ${f.depot}`} (${f.depot})</span>
+                </div>
+                <div>
+                  <b style="color: #b91c1c;">🚨 ${lang === 'fr' ? "Position actuelle détectée :" : "الموقع الحالي المرصود :"}</b><br/>
+                  <span style="font-weight: 700; color: #b91c1c;">${f.gps?.address || district.address}</span>
+                  <div style="font-family: monospace; font-size: 8.5px; color: #64748b; margin-top: 2px;">
+                    Coordonnées GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)} (+3.4 km écart)
+                  </div>
+                </div>
+              </div>
             </div>
           ` : ''}
           
           <div style="font-size: 11px; line-height: 1.6; color: #334155; margin-bottom: 8px;">
-            <b>📍 Affectation:</b> ${f.status === 'service' ? (f.client || f.depot) : `Dépôt ${f.depot}`}<br/>
+            <b>📍 Affectation:</b> ${f.status === 'service' ? (f.client || f.depot) : `Dépôt ${f.depot} (Non livré)`}<br/>
             <b>🌆 Quartier / Adresse:</b> ${f.gps?.address || district.address}<br/>
             <b>📅 Jours de Livraison:</b> <span style="font-weight: 900; color: #0284c7;">${deliveryDays} Jours</span><br/>
             <b>🍦 Volume Livré:</b> <span style="font-weight: 900; color: #059669;">${totalLiters.toLocaleString()} L (${totalCartons} Cartons)</span><br/>
@@ -596,7 +617,7 @@ export default function OpenStreetMapGeoloc({
                   )}
                 </div>
                 <p className="text-[11px] text-slate-300">
-                  {selectedFridge.depot} - {selectedFridge.client || 'Dépôt / Non assigné'}
+                  {selectedFridge.depot} - {selectedFridge.status === 'service' ? (selectedFridge.client || (lang === 'fr' ? 'Livré (Client)' : 'مسلّمة (عميل)')) : (lang === 'fr' ? 'Non livré (Stock)' : 'غير مسلّمة (مستودع)')}
                 </p>
               </div>
             </div>
@@ -614,6 +635,25 @@ export default function OpenStreetMapGeoloc({
               <span>{lang === 'fr' ? 'Fermer' : 'خروج'}</span>
             </button>
           </div>
+
+          {selectedFridge.isLocationAlert && (
+            <div className="p-2.5 bg-rose-950/80 border border-rose-500/50 rounded-xl text-[11px] space-y-1.5 text-rose-200">
+              <div className="font-black text-rose-400 flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-rose-500 animate-pulse" />
+                <span>{selectedFridge.alertReason || '⚠️ Déplacement suspect hors périmètre (+3.4 km détecté)'}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[10px] bg-slate-900/90 p-2 rounded-lg border border-rose-900/50">
+                <div>
+                  <span className="text-sky-400 font-bold block">{lang === 'fr' ? "Origine :" : "الموقع الأصلي :"}</span>
+                  <span className="text-white truncate block">{selectedFridge.client || `Dépôt ${selectedFridge.depot}`}</span>
+                </div>
+                <div>
+                  <span className="text-rose-400 font-bold block">{lang === 'fr' ? "Détecté :" : "المرصود :"}</span>
+                  <span className="text-rose-300 truncate block">{selectedFridge.gps?.address || 'Zone hors périmètre'}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Custom Popup CSS */}
           <style dangerouslySetInnerHTML={{ __html: `
