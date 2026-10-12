@@ -54,7 +54,9 @@ import {
   Building2,
   ShieldAlert,
   Download,
-  BellRing
+  BellRing,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { SystemState, User as LoggedUser } from '../types';
 import OpenStreetMapGeoloc from './OpenStreetMapGeoloc';
@@ -1103,6 +1105,9 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
   // Selected Refrigerator Serial for specific history filter and PDF generation
   const [selectedMvtFridgeSerial, setSelectedMvtFridgeSerial] = useState<string>('all');
   const [mvtSearchQuery, setMvtSearchQuery] = useState<string>('');
+  const [mvtTypeFilter, setMvtTypeFilter] = useState<'all' | 'transfer' | 'client' | 'maintenance'>('all');
+  const [mvtDepotFilter, setMvtDepotFilter] = useState<string>('all');
+  const [mvtViewMode, setMvtViewMode] = useState<'cards' | 'table'>('cards');
 
   // Refrigerator Movement Logs State
   const [movements, setMovements] = useState<RefrigeratorMovement[]>(() => {
@@ -4613,7 +4618,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
         </div>
       )}
       {activeSubTab === 'movements' && (
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="p-6 space-y-6 w-full max-w-full">
           
           {/* Printable Page Inline CSS Rules for exact history printing */}
           <style dangerouslySetInnerHTML={{ __html: `
@@ -4642,782 +4647,860 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
             }
           `}} />
 
-          {/* Movement history timeline logs (left 2 cols) */}
-          <div className="lg:col-span-2 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <h3 className="font-black text-slate-800 dark:text-white flex items-center gap-2 text-sm uppercase">
-                <FileText className="h-4.5 w-4.5 text-sky-500" />
-                {selectedMvtFridgeSerial === 'all' 
-                  ? t.logsTitle 
-                  : (lang === 'fr' ? `Historique Spécifique du Réfrigérateur` : `السجل المفصل لحركة الثلاجة`)}
-              </h3>
-              
-              {/* Reset filter button if active */}
-              {selectedMvtFridgeSerial !== 'all' && (
-                <button
-                  onClick={() => { 
-                    setSelectedMvtFridgeSerial('all'); 
-                    setMvtSearchQuery('');
-                    playBip(600, 0.05); 
-                  }}
-                  className="px-2.5 py-1 text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-bold uppercase"
-                >
-                  {lang === 'fr' ? 'Réinitialiser le filtre' : 'إعادة تعيين الفلتر'}
-                </button>
-              )}
-            </div>
+          {(() => {
+            // Metrics computation
+            const totalMovements = movements.length;
+            const uniqueFridgesCount = new Set(movements.map(m => (m.serialNumber || '').trim().toUpperCase())).size;
+            const interDepotCount = movements.filter(m => {
+              const from = (m.fromLocation || '').toLowerCase();
+              const to = (m.toLocation || '').toLowerCase();
+              return (from.includes('dépôt') && to.includes('dépôt')) || (m.fromStatus === 'stock' && m.toStatus === 'stock');
+            }).length;
+            const clientPlacementCount = movements.filter(m => {
+              const to = (m.toLocation || '').toLowerCase();
+              return m.toStatus === 'service' || (!to.includes('dépôt') && !to.includes('atelier'));
+            }).length;
+            const maintenanceCount = movements.filter(m => {
+              const from = (m.fromLocation || '').toLowerCase();
+              const to = (m.toLocation || '').toLowerCase();
+              return m.toStatus === 'maintenance' || to.includes('atelier') || to.includes('maintenance') || m.fromStatus === 'maintenance' || from.includes('atelier');
+            }).length;
 
-            {/* Filter & Search Selection Panel */}
-            <div className="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-150 dark:border-slate-800/80 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full xl:w-auto">
-                <div className="flex items-center gap-2 shrink-0">
-                  <Filter className="h-4 w-4 text-sky-500" />
-                  <span className="font-bold text-slate-700 dark:text-slate-300 text-xs">
-                    {lang === 'fr' ? 'Filtrer par Réfrigérateur :' : 'تصفية حسب الثلاجة :'}
-                  </span>
-                </div>
-                <div className="relative w-full sm:w-64">
-                  <select
-                    value={selectedMvtFridgeSerial}
-                    onChange={(e) => {
-                      setSelectedMvtFridgeSerial(e.target.value);
-                      setMvtSearchQuery(e.target.value === 'all' ? '' : e.target.value);
-                      playBip(800, 0.08);
-                    }}
-                    className="w-full text-xs px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-sky-500 outline-none cursor-pointer text-slate-800 dark:text-slate-100 font-bold shadow-sm"
-                  >
-                    <option value="all">{lang === 'fr' ? 'Tous les mouvements (Tout voir)' : 'جميع التحركات (عرض الكل)'}</option>
-                    {fridges.map(f => (
-                      <option key={f.id} value={f.serialNumber}>
-                        {f.serialNumber} — ({f.status === 'service' ? f.client : `Dépôt ${f.depot}`})
-                      </option>
-                    ))}
-                    {/* Plus any extra serials in movements not in fridges */}
-                    {Array.from(new Set(movements.map(m => m.serialNumber)))
-                      .filter(sn => !fridges.some(f => f.serialNumber === sn))
-                      .map(sn => (
-                        <option key={sn} value={sn}>{sn} (Historique uniquement)</option>
-                      ))
-                    }
-                  </select>
-                </div>
-              </div>
+            // Group movements by serial number to calculate accurate stay durations for each spot
+            const movementsBySerial: Record<string, typeof movements> = {};
+            movements.forEach(m => {
+              const sn = (m.serialNumber || '').trim().toUpperCase();
+              if (!movementsBySerial[sn]) movementsBySerial[sn] = [];
+              movementsBySerial[sn].push(m);
+            });
 
-              {/* Real-time Search Input */}
-              <div className="relative w-full md:w-80">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-sky-500" />
-                </div>
-                <input
-                  type="text"
-                  placeholder={lang === 'fr' ? "Rechercher par S/N (Écrire)..." : "بحث برقم التسلسل (كتابة)..."}
-                  value={mvtSearchQuery}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setMvtSearchQuery(val);
-                    if (val === '') {
-                      setSelectedMvtFridgeSerial('all');
-                    } else {
-                      // Find exact match case-insensitive
-                      const exactMatch = fridges.find(f => f.serialNumber.toLowerCase() === val.toLowerCase()) ||
-                                         movements.find(m => m.serialNumber.toLowerCase() === val.toLowerCase());
-                      if (exactMatch) {
-                        setSelectedMvtFridgeSerial(exactMatch.serialNumber);
-                      } else {
-                        // Just set filter to what they typed to filter logs list
-                        setSelectedMvtFridgeSerial(val);
-                      }
-                    }
-                  }}
-                  className="w-full text-xs pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-sky-500 outline-none text-slate-800 dark:text-slate-100 font-bold shadow-sm"
-                />
+            const durationLookup: Record<string, { duration: string; isCurrent: boolean }> = {};
+            Object.values(movementsBySerial).forEach(list => {
+              const sorted = [...list].sort((a, b) => parseMovementDate(a.date).getTime() - parseMovementDate(b.date).getTime());
+              sorted.forEach((m, idx) => {
+                const nextM = sorted[idx + 1];
+                durationLookup[m.id] = {
+                  duration: calculateDuration(m.date, nextM?.date),
+                  isCurrent: !nextM
+                };
+              });
+            });
 
-                {/* Autocomplete / Suggestions list */}
-                {mvtSearchQuery && !fridges.some(f => f.serialNumber.toLowerCase() === mvtSearchQuery.toLowerCase()) && (
-                  <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/50">
-                    {fridges
-                      .filter(f => f.serialNumber.toLowerCase().includes(mvtSearchQuery.toLowerCase()))
-                      .map(f => (
-                        <button
-                          key={f.id}
-                          type="button"
-                          onClick={() => {
-                            setMvtSearchQuery(f.serialNumber);
-                            setSelectedMvtFridgeSerial(f.serialNumber);
-                            playBip(800, 0.08);
-                          }}
-                          className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 font-bold flex justify-between items-center transition-colors"
-                        >
-                          <span className="font-mono text-sky-600 dark:text-sky-400">{f.serialNumber}</span>
-                          <span className="text-[10px] text-slate-400 font-normal">
-                            {f.status === 'service' ? f.client : `Dépôt ${f.depot}`}
-                          </span>
-                        </button>
-                      ))}
-                    {Array.from(new Set(movements.map(m => m.serialNumber as string)))
-                      .filter((sn: string) => sn.toLowerCase().includes(mvtSearchQuery.toLowerCase()) && !fridges.some(f => f.serialNumber === sn))
-                      .map((sn: string) => (
-                        <button
-                          key={sn}
-                          type="button"
-                          onClick={() => {
-                            setMvtSearchQuery(sn);
-                            setSelectedMvtFridgeSerial(sn);
-                            playBip(800, 0.08);
-                          }}
-                          className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 font-bold flex justify-between items-center transition-colors"
-                        >
-                          <span className="font-mono text-slate-500">{sn}</span>
-                          <span className="text-[10px] text-slate-400 font-normal italic">
-                            {lang === 'fr' ? 'Historique uniquement' : 'سجل فقط'}
-                          </span>
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            // Filter movements according to active criteria
+            let displayList = movements.filter(m => {
+              const sn = (m.serialNumber || '').toUpperCase();
+              const fromLoc = (m.fromLocation || '').toLowerCase();
+              const toLoc = (m.toLocation || '').toLowerCase();
+              const driver = (m.driverName || '').toLowerCase();
+              const notes = (m.notes || '').toLowerCase();
 
-            {/* If a specific refrigerator is selected, show its technical sheet */}
-            {selectedMvtFridgeSerial !== 'all' && (() => {
-              const currentDetails = fridges.find(f => f.serialNumber.toUpperCase() === selectedMvtFridgeSerial.toUpperCase());
-              return (
-                <div className="bg-gradient-to-br from-sky-500/5 via-slate-50 to-slate-50 dark:from-sky-950/10 dark:via-slate-850 dark:to-slate-850 p-5 rounded-2xl border border-sky-100 dark:border-sky-950/30 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-sky-500 text-white rounded-xl shadow-md">
-                        <Snowflake className="h-5 w-5 animate-spin-slow" />
-                      </div>
-                      <div>
-                        <h4 className="font-black text-slate-800 dark:text-white text-xs tracking-wide uppercase">
-                          {lang === 'fr' ? 'Fiche d\'appareil & Statut' : 'بطاقة الثلاجة والحالة'}
-                        </h4>
-                        <span className="font-mono text-[10px] font-black text-sky-600 dark:text-sky-400">
-                          S/N: {selectedMvtFridgeSerial}
-                        </span>
-                      </div>
+              // Fridge serial filter
+              if (selectedMvtFridgeSerial !== 'all') {
+                if (!sn.includes(selectedMvtFridgeSerial.trim().toUpperCase())) return false;
+              }
+
+              // Search query
+              if (mvtSearchQuery.trim()) {
+                const query = mvtSearchQuery.trim().toLowerCase();
+                const matches = sn.toLowerCase().includes(query) ||
+                                fromLoc.includes(query) ||
+                                toLoc.includes(query) ||
+                                driver.includes(query) ||
+                                notes.includes(query);
+                if (!matches) return false;
+              }
+
+              // Movement Type filter
+              if (mvtTypeFilter === 'transfer') {
+                const isInterDepot = (fromLoc.includes('dépôt') && toLoc.includes('dépôt')) || (m.fromStatus === 'stock' && m.toStatus === 'stock');
+                if (!isInterDepot) return false;
+              } else if (mvtTypeFilter === 'client') {
+                const isClient = m.toStatus === 'service' || (!toLoc.includes('dépôt') && !toLoc.includes('atelier'));
+                if (!isClient) return false;
+              } else if (mvtTypeFilter === 'maintenance') {
+                const isMaint = m.toStatus === 'maintenance' || toLoc.includes('atelier') || toLoc.includes('maintenance') || m.fromStatus === 'maintenance';
+                if (!isMaint) return false;
+              }
+
+              // Depot filter
+              if (mvtDepotFilter !== 'all') {
+                const dep = mvtDepotFilter.toLowerCase();
+                if (!fromLoc.includes(dep) && !toLoc.includes(dep)) return false;
+              }
+
+              return true;
+            });
+
+            // If a specific fridge is selected, sort newest first
+            if (selectedMvtFridgeSerial !== 'all') {
+              displayList = [...displayList].sort((a, b) => parseMovementDate(b.date).getTime() - parseMovementDate(a.date).getTime());
+            }
+
+            const currentDetails = selectedMvtFridgeSerial !== 'all' 
+              ? fridges.find(f => f.serialNumber.trim().toUpperCase() === selectedMvtFridgeSerial.trim().toUpperCase())
+              : null;
+
+            const isFilterActive = selectedMvtFridgeSerial !== 'all' || mvtSearchQuery !== '' || mvtTypeFilter !== 'all' || mvtDepotFilter !== 'all';
+
+            return (
+              <div className="space-y-6">
+                
+                {/* 1. TOP HEADER & CONTROLS BANNER */}
+                <div className="bg-gradient-to-r from-sky-500/10 via-indigo-500/5 to-transparent dark:from-sky-500/15 dark:via-indigo-500/10 p-5 rounded-3xl border border-sky-100 dark:border-sky-900/40 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="p-3 bg-gradient-to-tr from-sky-500 to-indigo-600 text-white rounded-2xl shadow-lg shadow-sky-500/20">
+                      <History className="h-6 w-6" />
                     </div>
-                    
-                    <div className="flex flex-wrap gap-2 no-print">
-                      {/* Direct jsPDF Download Button */}
+                    <div>
+                      <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                        {lang === 'fr' 
+                          ? 'Historique & Traçabilité des Mouvements de Réfrigérateurs' 
+                          : 'سجل وتتبع حركة وتنقلات الثلاجات'}
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold border border-sky-500/20">
+                          {displayList.length} / {totalMovements}
+                        </span>
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                        {lang === 'fr'
+                          ? 'Surveillance complète des transferts inter-dépôts, affectations clients et durées de séjour.'
+                          : 'متابعة شاملة لتنقلات الأجهزة بين المستودعات ولدى العملاء مع احتساب دقيق لمدد الإقامة.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Reset all filters button */}
+                    {isFilterActive && (
+                      <button
+                        onClick={() => {
+                          setSelectedMvtFridgeSerial('all');
+                          setMvtSearchQuery('');
+                          setMvtTypeFilter('all');
+                          setMvtDepotFilter('all');
+                          playBip(600, 0.05);
+                        }}
+                        className="px-3 py-2 text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors font-bold uppercase flex items-center gap-1.5"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>{lang === 'fr' ? 'Réinitialiser Filtres' : 'إعادة ضبط الفلاتر'}</span>
+                      </button>
+                    )}
+
+                    {/* PDF Download if specific fridge */}
+                    {selectedMvtFridgeSerial !== 'all' && (
                       <button
                         onClick={() => {
                           playBip(1300, 0.1);
                           generateFridgeMovementHistoryPdf(selectedMvtFridgeSerial, movements, currentDetails, lang);
                         }}
-                        className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-[11px] font-black tracking-wide transition-all flex items-center gap-2 shadow shadow-sky-500/10 cursor-pointer"
+                        className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm shadow-sky-500/20 cursor-pointer"
                       >
                         <Download className="h-3.5 w-3.5" />
-                        <span>{lang === 'fr' ? 'Télécharger Historique (PDF)' : 'تحميل سجل الحركة (PDF)'}</span>
+                        <span>{lang === 'fr' ? 'Exporter PDF' : 'تصدير PDF'}</span>
                       </button>
+                    )}
 
-                      {/* Print PDF Button */}
+                    {/* Print Report */}
+                    {selectedMvtFridgeSerial !== 'all' && (
                       <button
                         onClick={() => {
                           playBip(1300, 0.1);
-                          setTimeout(() => {
-                            window.print();
-                          }, 250);
+                          setTimeout(() => window.print(), 250);
                         }}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-black tracking-wide transition-all flex items-center gap-2 shadow shadow-emerald-500/10 cursor-pointer"
+                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 cursor-pointer"
                       >
                         <Printer className="h-3.5 w-3.5" />
-                        <span>{lang === 'fr' ? 'Imprimer / Rapport' : 'طباعة التقرير'}</span>
+                        <span>{lang === 'fr' ? 'Imprimer' : 'طباعة'}</span>
                       </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. MODERN KPI METRICS RIBBON */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+                  {/* Total Movements */}
+                  <div 
+                    onClick={() => { setMvtTypeFilter('all'); playBip(700, 0.05); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      mvtTypeFilter === 'all'
+                        ? 'bg-sky-500/10 border-sky-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-sky-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Total Mouvements' : 'إجمالي التحركات'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                        <Activity className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-slate-800 dark:text-white font-mono tracking-tight">
+                      {totalMovements}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Toutes opérations' : 'كافة العمليات المسجلة'}
                     </div>
                   </div>
 
-                  {currentDetails ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-[10px] font-bold uppercase text-slate-400">
-                      <div className="bg-white dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                        <span className="block mb-1 text-[8px] tracking-wider text-slate-400 dark:text-slate-500">{lang === 'fr' ? 'Type d\'équipement' : 'نوع الثلاجة'}</span>
-                        <b className="text-slate-800 dark:text-white text-xs font-black">
-                          {currentDetails.type === 'chest' ? (lang === 'fr' ? 'COFFRE / AP' : 'مجمّد أفقي') : (lang === 'fr' ? 'VITRINE / AG' : 'ثلاجة عرض عمودية')}
-                        </b>
-                      </div>
-                      <div className="bg-white dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                        <span className="block mb-1 text-[8px] tracking-wider text-slate-400 dark:text-slate-500">{lang === 'fr' ? 'Statut Opérationnel' : 'الحالة التشغيلية'}</span>
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-black inline-block mt-0.5 ${
-                          currentDetails.status === 'service' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400' :
-                          currentDetails.status === 'maintenance' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400' :
-                          'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400'
-                        }`}>
-                          {currentDetails.status === 'service' ? (lang === 'fr' ? 'EN SERVICE' : 'في الخدمة') :
-                           currentDetails.status === 'maintenance' ? (lang === 'fr' ? 'ATELIER R&M' : 'صيانة') :
-                           (lang === 'fr' ? 'EN DÉPÔT' : 'في المستودع')}
-                        </span>
-                      </div>
-                      <div className="bg-white dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                        <span className="block mb-1 text-[8px] tracking-wider text-slate-400 dark:text-slate-500">{lang === 'fr' ? 'Détenteur Actuel' : 'الحائز الحالي'}</span>
-                        <b className="text-slate-800 dark:text-white text-xs truncate block font-black">
-                          {currentDetails.status === 'service' ? currentDetails.client : `Dépôt ${currentDetails.depot}`}
-                        </b>
+                  {/* Unique Refrigerators */}
+                  <div 
+                    onClick={() => { setSelectedMvtFridgeSerial('all'); playBip(700, 0.05); }}
+                    className="p-4 rounded-2xl border bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-indigo-500/30 transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Appareils Suivis' : 'الأجهزة المتبوعة'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                        <Snowflake className="h-4 w-4" />
                       </div>
                     </div>
-                  ) : (
-                    <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-[10px] font-bold text-amber-600 dark:text-amber-400">
-                      {lang === 'fr' ? 'Appareil d\'archive historique (non répertorié dans le stock actif actuel).' : 'ثلاجة أرشيفية (غير مسجلة في المخزن النشط حالياً).'}
+                    <div className="mt-2 text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono tracking-tight">
+                      {uniqueFridgesCount}
                     </div>
-                  )}
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Numéros de série' : 'أرقام تسلسل فريدة'}
+                    </div>
+                  </div>
+
+                  {/* Inter-Depot Transfers */}
+                  <div 
+                    onClick={() => { setMvtTypeFilter(mvtTypeFilter === 'transfer' ? 'all' : 'transfer'); playBip(700, 0.05); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      mvtTypeFilter === 'transfer'
+                        ? 'bg-blue-500/10 border-blue-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-blue-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Inter-Dépôts' : 'بين المستودعات'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                        <Warehouse className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">
+                      {interDepotCount}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Transferts logistiques' : 'تحويلات لوجستية'}
+                    </div>
+                  </div>
+
+                  {/* Client Placements */}
+                  <div 
+                    onClick={() => { setMvtTypeFilter(mvtTypeFilter === 'client' ? 'all' : 'client'); playBip(700, 0.05); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      mvtTypeFilter === 'client'
+                        ? 'bg-emerald-500/10 border-emerald-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Placements Clients' : 'توزيع لدى العملاء'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <Building2 className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+                      {clientPlacementCount}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Commerces & Points de vente' : 'نقاط بيع ومتاجر'}
+                    </div>
+                  </div>
+
+                  {/* Maintenance & Returns */}
+                  <div 
+                    onClick={() => { setMvtTypeFilter(mvtTypeFilter === 'maintenance' ? 'all' : 'maintenance'); playBip(700, 0.05); }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                      mvtTypeFilter === 'maintenance'
+                        ? 'bg-amber-500/10 border-amber-500/40 shadow-sm'
+                        : 'bg-white dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 hover:border-amber-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        {lang === 'fr' ? 'Maintenance' : 'ورشات وصيانة'}
+                      </span>
+                      <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <Wrench className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">
+                      {maintenanceCount}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-400 font-medium">
+                      {lang === 'fr' ? 'Atelier & Réparation' : 'ورشة وتصليح'}
+                    </div>
+                  </div>
                 </div>
-              );
-            })()}
 
-            {/* TIMELINE LIST */}
-            <div className="space-y-4 relative pl-4 border-l border-slate-100 dark:border-slate-800">
-              <AnimatePresence mode="popLayout">
-                {(() => {
-                  const isSpecific = selectedMvtFridgeSerial !== 'all';
-                  
-                  if (isSpecific) {
-                    const filtered = movements.filter(m => m.serialNumber.toUpperCase().includes(selectedMvtFridgeSerial.toUpperCase()));
-                    
-                    // Sort from oldest to newest to compute duration correctly
-                    const sorted = [...filtered].sort((a, b) => parseMovementDate(a.date).getTime() - parseMovementDate(b.date).getTime());
-                    
-                    const computed = sorted.map((m, idx) => {
-                      const nextM = sorted[idx + 1];
-                      const duration = calculateDuration(m.date, nextM?.date);
-                      return {
-                        ...m,
-                        duration,
-                        isCurrent: !nextM
-                      };
-                    }).reverse(); // Show newest at the top
-
-                    if (computed.length === 0) {
-                      return (
-                        <div className="bg-white dark:bg-slate-850 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 text-center text-slate-400 text-xs">
-                          <History className="h-8 w-8 text-slate-300 mx-auto mb-2 animate-pulse" />
-                          <p className="font-bold uppercase">{lang === 'fr' ? 'Aucun mouvement enregistré pour cet appareil.' : 'لا توجد تحركات مسجلة لهذه الثلاجة.'}</p>
+                {/* 3. TECHNICAL SPECIFICATION SHEET (When a fridge is focused) */}
+                {selectedMvtFridgeSerial !== 'all' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-gradient-to-br from-sky-500/5 via-slate-50 to-indigo-500/5 dark:from-sky-950/20 dark:via-slate-850 dark:to-indigo-950/20 p-5 sm:p-6 rounded-3xl border border-sky-200/70 dark:border-sky-900/40 shadow-sm space-y-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+                      <div className="flex items-center gap-3.5">
+                        <div className="p-2.5 bg-sky-500 text-white rounded-2xl shadow-md">
+                          <Snowflake className="h-5 w-5 animate-spin-slow" />
                         </div>
-                      );
-                    }
-
-                    return computed.map((log, index) => (
-                      <motion.div
-                        key={log.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.04 }}
-                        className="bg-white dark:bg-slate-850 p-5 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-sm relative space-y-3 text-xs"
-                      >
-                        {/* Time indicator dot */}
-                        <span className={`absolute -left-[21px] top-6 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center shadow ${
-                          log.isCurrent ? 'bg-emerald-500 animate-pulse' : 'bg-sky-500'
-                        }`}>
-                          <span className="h-1.5 w-1.5 bg-white rounded-full"></span>
-                        </span>
-
-                        <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-black text-sky-600 dark:text-sky-400 text-xs">{log.serialNumber}</span>
-                            <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold text-slate-500 uppercase">
-                              {log.type === 'chest' || log.type === 'AP' ? (lang === 'fr' ? 'Coffre / AP' : 'مجمّد أفقي') : (lang === 'fr' ? 'Vitrine / AG' : 'ثلاجة عرض')}
+                            <span className="text-[10px] font-black uppercase text-sky-600 dark:text-sky-400 tracking-wider">
+                              {lang === 'fr' ? 'Fiche Technique d\'Appareil' : 'البطاقة التقنية للجهاز'}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-[10px] font-black">
+                              {displayList.length} {lang === 'fr' ? 'Transfert(s)' : 'حركة مسجلة'}
                             </span>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1 bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-100 dark:border-slate-800">
-                            <Calendar className="h-3.5 w-3.5 text-sky-500" />
-                            <b>{log.date}</b>
+                          <h3 className="font-mono font-black text-slate-900 dark:text-white text-base sm:text-lg">
+                            {selectedMvtFridgeSerial}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedMvtFridgeSerial('all');
+                            setMvtSearchQuery('');
+                            playBip(500, 0.05);
+                          }}
+                          className="px-3 py-1.5 bg-slate-200 dark:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors uppercase"
+                        >
+                          {lang === 'fr' ? 'Voir Tous les Réfrigérateurs' : 'عرض كافة الثلاجات'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {currentDetails ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+                        <div className="bg-white dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                          <span className="block mb-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">
+                            {lang === 'fr' ? 'Type d\'équipement' : 'نوع الثلاجة'}
+                          </span>
+                          <b className="text-slate-800 dark:text-white text-xs sm:text-sm font-black">
+                            {currentDetails.type === 'chest' || currentDetails.type === 'AP'
+                              ? (lang === 'fr' ? 'CONGÉLATEUR COFFRE (AP)' : 'مجمّد أفقي (AP)') 
+                              : (lang === 'fr' ? 'VITRINE VERTICALE (AG)' : 'ثلاجة عرض عمودية (AG)')}
+                          </b>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                          <span className="block mb-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">
+                            {lang === 'fr' ? 'Statut Opérationnel' : 'الحالة التشغيلية'}
+                          </span>
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-black inline-block ${
+                            currentDetails.status === 'service' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400' :
+                            currentDetails.status === 'maintenance' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400' :
+                            'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400'
+                          }`}>
+                            {currentDetails.status === 'service' ? (lang === 'fr' ? 'EN SERVICE' : 'في الخدمة') :
+                             currentDetails.status === 'maintenance' ? (lang === 'fr' ? 'ATELIER R&M' : 'صيانة وإصلاح') :
+                             (lang === 'fr' ? 'EN DÉPÔT' : 'في المستودع')}
                           </span>
                         </div>
 
-                        {/* Transfer Path Box */}
-                        <div className="grid grid-cols-1 sm:grid-cols-5 items-center gap-2 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60">
-                          <div className="col-span-2">
-                            <span className="text-[9px] text-slate-400 block font-bold uppercase">{t.from}</span>
-                            <b className="text-slate-700 dark:text-slate-300 truncate block text-xxs font-black uppercase">{log.fromLocation}</b>
-                          </div>
-                          <div className="flex flex-col items-center justify-center col-span-1">
-                            <ArrowRightLeft className="h-4 w-4 text-sky-500 animate-pulse" />
-                          </div>
-                          <div className="col-span-2">
-                            <span className="text-[9px] text-slate-400 block font-bold uppercase">{t.to}</span>
-                            <b className="text-slate-800 dark:text-white truncate block text-xxs font-black uppercase">{log.toLocation}</b>
-                          </div>
+                        <div className="bg-white dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                          <span className="block mb-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">
+                            {lang === 'fr' ? 'Emplacement / Détenteur Actuel' : 'الموقع / الحائز الحالي'}
+                          </span>
+                          <b className="text-slate-800 dark:text-white text-xs sm:text-sm truncate block font-black">
+                            {currentDetails.status === 'service' ? (currentDetails.client || 'Client') : `Dépôt ${currentDetails.depot}`}
+                          </b>
                         </div>
 
-                        {/* Duration calculation block */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 text-sky-500" />
-                            <span className="text-slate-400 font-bold uppercase text-[9px]">
-                              {lang === 'fr' ? 'Durée de séjour :' : 'المدة المقضاة :'}
-                            </span>
-                            <span className={`px-2 py-0.5 font-mono text-xxs font-black rounded-md ${
-                              log.isCurrent 
-                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
-                                : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
-                            }`}>
-                              {log.duration} {log.isCurrent && (lang === 'fr' ? '(En cours)' : '(حالي)')}
-                            </span>
-                          </div>
+                        <div className="bg-white dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                          <span className="block mb-1 text-[9px] uppercase tracking-wider text-slate-400 font-bold">
+                            {lang === 'fr' ? 'Durée dans l\'emplacement actuel' : 'مدة الإقامة في الموقع الحالي'}
+                          </span>
+                          <span className="text-xs sm:text-sm font-black text-sky-600 dark:text-sky-400 font-mono block">
+                            {displayList[0] ? (durationLookup[displayList[0].id]?.duration || (lang === 'fr' ? 'En cours' : 'قيد الاستخدام')) : 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs font-bold text-amber-700 dark:text-amber-300">
+                        {lang === 'fr' 
+                          ? 'Appareil historique archivé (non répertorié dans le stock actif actuel, mouvements conservés).' 
+                          : 'ثلاجة أرشيفية (غير مسجلة في المخزن النشط حالياً، تم الاحتفاظ بسجل التحركات).'}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
 
-                          <div className="text-[10px] text-slate-500">
-                            {lang === 'fr' ? 'Vendeur / Transporteur :' : 'الموزع المسؤول :'} <b className="text-slate-700 dark:text-slate-300 font-extrabold">{log.driverName}</b>
+                {/* 4. ADVANCED FILTER & SEARCH TOOLBAR */}
+                <div className="bg-white dark:bg-slate-850 p-4 sm:p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+                  <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                    
+                    {/* Left: Refrigerator Selector Dropdown & Live Search */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                      
+                      {/* Refrigerator Dropdown */}
+                      <div className="relative w-full sm:w-64 shrink-0">
+                        <div className="text-[10px] uppercase font-bold text-slate-400 mb-1 flex items-center gap-1.5">
+                          <Filter className="h-3.5 w-3.5 text-sky-500" />
+                          <span>{lang === 'fr' ? 'Sélectionner Réfrigérateur :' : 'اختيار الثلاجة :'}</span>
+                        </div>
+                        <select
+                          value={selectedMvtFridgeSerial}
+                          onChange={(e) => {
+                            setSelectedMvtFridgeSerial(e.target.value);
+                            setMvtSearchQuery(e.target.value === 'all' ? '' : e.target.value);
+                            playBip(800, 0.08);
+                          }}
+                          className="w-full text-xs px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700/80 rounded-xl focus:border-sky-500 outline-none cursor-pointer text-slate-800 dark:text-slate-100 font-bold shadow-sm"
+                        >
+                          <option value="all">{lang === 'fr' ? 'Tous les mouvements (Tout voir)' : 'جميع التحركات (عرض الكل)'}</option>
+                          {fridges.map(f => (
+                            <option key={f.id} value={f.serialNumber}>
+                              {f.serialNumber} — ({f.status === 'service' ? f.client : `Dépôt ${f.depot}`})
+                            </option>
+                          ))}
+                          {Array.from(new Set(movements.map(m => m.serialNumber as string)))
+                            .filter(sn => sn && !fridges.some(f => f.serialNumber === sn))
+                            .map(sn => (
+                              <option key={sn} value={sn}>{sn} ({lang === 'fr' ? 'Historique' : 'أرشيف'})</option>
+                            ))
+                          }
+                        </select>
+                      </div>
+
+                      {/* Real-time Search Input with clear button */}
+                      <div className="relative flex-1">
+                        <div className="text-[10px] uppercase font-bold text-slate-400 mb-1 flex items-center gap-1.5">
+                          <Search className="h-3.5 w-3.5 text-sky-500" />
+                          <span>{lang === 'fr' ? 'Recherche Rapide (S/N, Chauffeur, Lieu) :' : 'بحث فوري (رقم، سائق، موقع) :'}</span>
+                        </div>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="h-3.5 w-3.5 text-slate-400" />
                           </div>
+                          <input
+                            type="text"
+                            placeholder={lang === 'fr' ? "Rechercher par S/N, destination, chauffeur..." : "ابحث برقم التسلسل، الوجهة، السائق..."}
+                            value={mvtSearchQuery}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setMvtSearchQuery(val);
+                              if (val === '') {
+                                setSelectedMvtFridgeSerial('all');
+                              } else {
+                                const exactMatch = fridges.find(f => f.serialNumber.toLowerCase() === val.toLowerCase()) ||
+                                                   movements.find(m => m.serialNumber.toLowerCase() === val.toLowerCase());
+                                if (exactMatch) {
+                                  setSelectedMvtFridgeSerial(exactMatch.serialNumber);
+                                }
+                              }
+                            }}
+                            className="w-full text-xs pl-9 pr-9 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700/80 rounded-xl focus:border-sky-500 outline-none text-slate-800 dark:text-slate-100 font-bold shadow-sm"
+                          />
+                          {mvtSearchQuery && (
+                            <button
+                              onClick={() => {
+                                setMvtSearchQuery('');
+                                setSelectedMvtFridgeSerial('all');
+                              }}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
 
-                        {log.notes && (
-                          <div className="p-2.5 bg-amber-500/5 dark:bg-amber-500/2 border border-amber-500/10 rounded-lg text-[10px] text-slate-500 dark:text-slate-400 italic">
-                            "{log.notes}"
+                        {/* Autocomplete suggestion pills when typing */}
+                        {mvtSearchQuery && !fridges.some(f => f.serialNumber.toLowerCase() === mvtSearchQuery.toLowerCase()) && (
+                          <div className="absolute z-20 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/50">
+                            {fridges
+                              .filter(f => f.serialNumber.toLowerCase().includes(mvtSearchQuery.toLowerCase()))
+                              .map(f => (
+                                <button
+                                  key={f.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setMvtSearchQuery(f.serialNumber);
+                                    setSelectedMvtFridgeSerial(f.serialNumber);
+                                    playBip(800, 0.08);
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 font-bold flex justify-between items-center transition-colors"
+                                >
+                                  <span className="font-mono text-sky-600 dark:text-sky-400">{f.serialNumber}</span>
+                                  <span className="text-[10px] text-slate-400 font-normal">
+                                    {f.status === 'service' ? f.client : `Dépôt ${f.depot}`}
+                                  </span>
+                                </button>
+                              ))}
                           </div>
                         )}
-                      </motion.div>
-                    ));
-                  } else {
-                    // Traditional logs list
-                    return movements.map((log, index) => (
-                      <motion.div
-                        key={log.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="bg-white dark:bg-slate-850 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm relative space-y-2 text-xs"
-                      >
-                        {/* Time indicator dot */}
-                        <span className="absolute -left-[21px] top-5 h-3.5 w-3.5 bg-sky-500 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center">
-                          <span className="h-1.5 w-1.5 bg-white rounded-full"></span>
-                        </span>
+                      </div>
 
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-black text-sky-600 dark:text-sky-400">{log.serialNumber}</span>
-                            <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold text-slate-500 uppercase">
-                              {log.type === 'chest' ? 'Coffre' : 'Vitrine'}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {log.date}
-                          </span>
+                      {/* Depot Filter Select */}
+                      <div className="relative w-full sm:w-48 shrink-0">
+                        <div className="text-[10px] uppercase font-bold text-slate-400 mb-1 flex items-center gap-1.5">
+                          <Warehouse className="h-3.5 w-3.5 text-sky-500" />
+                          <span>{lang === 'fr' ? 'Par Dépôt :' : 'حسب المستودع :'}</span>
                         </div>
+                        <select
+                          value={mvtDepotFilter}
+                          onChange={(e) => {
+                            setMvtDepotFilter(e.target.value);
+                            playBip(700, 0.05);
+                          }}
+                          className="w-full text-xs px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700/80 rounded-xl focus:border-sky-500 outline-none cursor-pointer text-slate-800 dark:text-slate-100 font-bold shadow-sm"
+                        >
+                          <option value="all">{lang === 'fr' ? 'Tous les dépôts' : 'كافة المستودعات'}</option>
+                          {regionalDepots.map(depot => (
+                            <option key={depot} value={depot}>Dépôt {depot}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                        <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl text-[11px]">
-                          <div className="flex-1">
-                            <span className="text-[9px] text-slate-400 block font-bold uppercase">{t.from}</span>
-                            <b className="text-slate-700 dark:text-slate-300 truncate block">{log.fromLocation}</b>
-                          </div>
-                          <ArrowRightLeft className="h-4.5 w-4.5 text-slate-300" />
-                          <div className="flex-1">
-                            <span className="text-[9px] text-slate-400 block font-bold uppercase">{t.to}</span>
-                            <b className="text-slate-800 dark:text-white truncate block">{log.toLocation}</b>
-                          </div>
-                        </div>
+                    </div>
 
-                        <div className="flex justify-between items-center text-[10px] text-slate-400">
-                          <span>{t.driverName} : <b className="text-slate-600 dark:text-slate-300">{log.driverName}</b></span>
-                          <span className="italic">"{log.notes}"</span>
-                        </div>
+                    {/* Right: View Mode Switcher (Cards vs Table) */}
+                    <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
+                      <div className="text-[10px] uppercase font-bold text-slate-400 hidden sm:block">
+                        {lang === 'fr' ? 'Affichage :' : 'العرض :'}
+                      </div>
+                      <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => { setMvtViewMode('cards'); playBip(600, 0.04); }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            mvtViewMode === 'cards'
+                              ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-sm'
+                              : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                          }`}
+                        >
+                          <LayoutGrid className="h-3.5 w-3.5" />
+                          <span>{lang === 'fr' ? 'Cartes' : 'بطاقات'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setMvtViewMode('table'); playBip(600, 0.04); }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            mvtViewMode === 'table'
+                              ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-sm'
+                              : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                          }`}
+                        >
+                          <List className="h-3.5 w-3.5" />
+                          <span>{lang === 'fr' ? 'Tableau' : 'جدول'}</span>
+                        </button>
+                      </div>
+                    </div>
 
-                      </motion.div>
-                    ));
-                  }
-                })()}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* New movement registration form (right 1 col) */}
-          <div className="bg-slate-50 dark:bg-slate-850 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-5">
-            <div>
-              <h3 className="font-black text-slate-800 dark:text-white flex items-center gap-1.5 uppercase text-xs">
-                <ArrowRightLeft className="h-4 w-4 text-sky-500 animate-pulse" />
-                {lang === 'fr' ? 'Enregistrer un Nouveau Mouvement / Transfert' : 'تسجيل حركة / تحويل ثلاجات جديد'}
-              </h3>
-              <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
-                {lang === 'fr' 
-                  ? 'Transférez des congélateurs individuellement ou par groupe entre dépôts régionaux ou chez des commerces.' 
-                  : 'قم بنقل ثلاجة أو مجموعة ثلاجات بين المستودعات الإقليمية أو نقاط البيع المختلفة.'}
-              </p>
-            </div>
-
-            {/* Success alert with Direct PDF download */}
-            {lastRegisteredBatch && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="p-4 bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-500/20 rounded-2xl space-y-3"
-              >
-                <div className="flex items-start gap-2.5">
-                  <CheckCircle2 className="h-4.5 w-4.5 text-emerald-500 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-black text-emerald-600 dark:text-emerald-400 text-xxs uppercase tracking-wider">
-                      {lang === 'fr' ? 'Mouvements enregistrés avec succès !' : 'تم حفظ حركة المخزون بنجاح!'}
-                    </h4>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-bold">
-                      {lang === 'fr' 
-                        ? `Bon de Transfert N° ZHI-${lastRegisteredBatch.id} généré.` 
-                        : `تم إنشاء مستند النقل رقم ZHI-${lastRegisteredBatch.id}`}
-                    </p>
                   </div>
-                </div>
 
-                <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl text-[10px] space-y-1 text-slate-600 dark:text-slate-300 font-bold">
-                  <div>Type : <span className="text-slate-800 dark:text-white">{lastRegisteredBatch.type}</span></div>
-                  <div>Provenance : <span className="text-slate-800 dark:text-white">{lastRegisteredBatch.origin}</span></div>
-                  <div>Destination : <span className="text-slate-800 dark:text-white">{lastRegisteredBatch.destination}</span></div>
-                  <div>Chauffeur : <span className="text-slate-800 dark:text-white">{lastRegisteredBatch.driverName}</span></div>
-                  <div>Appareils : <span className="text-sky-500 font-mono font-black">{lastRegisteredBatch.items.length}</span></div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    playBip(1300, 0.1);
-                    generateBatchTransferPdf(lastRegisteredBatch, lang);
-                  }}
-                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xxs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  <span>{lang === 'fr' ? 'Télécharger Bon de Transfert (PDF)' : 'تحميل مستند النقل (PDF)'}</span>
-                </button>
-              </motion.div>
-            )}
-
-            <form onSubmit={handleRegisterMovement} className="space-y-4 text-xs">
-              
-              {/* Type de Mouvement */}
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">
-                  {lang === 'fr' ? 'Type de mouvement' : 'نوع الحركة / النقل'}
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMvtType('depot_transfer');
-                      setMvtSelectedFridgeIds([]);
-                      playBip(700, 0.05);
-                    }}
-                    className={`p-2.5 rounded-xl border font-bold text-left transition-all ${
-                      mvtType === 'depot_transfer'
-                        ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 font-black'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="font-extrabold uppercase text-[9px] mb-0.5">{lang === 'fr' ? 'Inter-Dépôts' : 'بين المستودعات'}</div>
-                    <div className="text-[8px] text-slate-400 leading-normal font-normal">
-                      {lang === 'fr' ? 'Dépôt Régional ➜ Dépôt' : 'من مستودع إقليمي إلى آخر'}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMvtType('client_placement');
-                      setMvtSelectedFridgeIds([]);
-                      playBip(700, 0.05);
-                    }}
-                    className={`p-2.5 rounded-xl border font-bold text-left transition-all ${
-                      mvtType === 'client_placement'
-                        ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 font-black'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="font-extrabold uppercase text-[9px] mb-0.5">{lang === 'fr' ? 'Placement Client' : 'وضع لدى عميل'}</div>
-                    <div className="text-[8px] text-slate-400 leading-normal font-normal">
-                      {lang === 'fr' ? 'Dépôt ➜ Commerce' : 'من المستودع للعميل مباشرة'}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMvtType('service_return');
-                      setMvtSelectedFridgeIds([]);
-                      playBip(700, 0.05);
-                    }}
-                    className={`p-2.5 rounded-xl border font-bold text-left transition-all ${
-                      mvtType === 'service_return'
-                        ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 font-black'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="font-extrabold uppercase text-[9px] mb-0.5">{lang === 'fr' ? 'Retour de Service' : 'إرجاع للمستودع'}</div>
-                    <div className="text-[8px] text-slate-400 leading-normal font-normal">
-                      {lang === 'fr' ? 'Commerce ➜ Dépôt' : 'من العميل إلى المستودع'}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMvtType('maintenance_send');
-                      setMvtSelectedFridgeIds([]);
-                      playBip(700, 0.05);
-                    }}
-                    className={`p-2.5 rounded-xl border font-bold text-left transition-all ${
-                      mvtType === 'maintenance_send'
-                        ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30 font-black'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="font-extrabold uppercase text-[9px] mb-0.5">{lang === 'fr' ? 'Maintenance' : 'إرسال للصيانة'}</div>
-                    <div className="text-[8px] text-slate-400 leading-normal font-normal">
-                      {lang === 'fr' ? 'Tout ➜ Atelier Réparation' : 'نقل الورشة للإصلاح'}
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Origine / Provenance Configuration */}
-              {(mvtType === 'depot_transfer' || mvtType === 'client_placement') && (
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    {lang === 'fr' ? "Dépôt d'Origine (Provenance)" : "مستودع الانطلاق (المصدر)"}
-                  </label>
-                  <select
-                    value={mvtOriginDepot}
-                    onChange={(e) => {
-                      setMvtOriginDepot(e.target.value);
-                      setMvtSelectedFridgeIds([]);
-                      playBip(600, 0.06);
-                    }}
-                    className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl dark:text-white font-bold"
-                  >
-                    {regionalDepots.map(depotName => (
-                      <option key={depotName} value={depotName}>Dépôt {depotName}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Destination Configuration */}
-              {mvtType === 'depot_transfer' && (
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    {lang === 'fr' ? 'Dépôt de Destination' : 'مستودع الاستقبال (الوجهة)'}
-                  </label>
-                  <select
-                    value={mvtDestDepot}
-                    onChange={(e) => {
-                      setMvtDestDepot(e.target.value);
-                      playBip(600, 0.06);
-                    }}
-                    className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl dark:text-white font-bold"
-                  >
-                    {regionalDepots
-                      .filter(d => d !== mvtOriginDepot)
-                      .map(depotName => (
-                        <option key={depotName} value={depotName}>Dépôt {depotName}</option>
-                      ))}
-                  </select>
-                </div>
-              )}
-
-              {mvtType === 'client_placement' && (
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    {lang === 'fr' ? 'Nom du Client / Commerce de Destination' : 'اسم العميل / المتجر المستلم'}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={lang === 'fr' ? "Ex: Hanout Al-Farah Rabat" : "مثال: بقالة الفرح الرباط"}
-                    value={mvtDestinationClient}
-                    onChange={(e) => setMvtDestinationClient(e.target.value)}
-                    className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl dark:text-white font-bold"
-                  />
-                </div>
-              )}
-
-              {mvtType === 'service_return' && (
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    {lang === 'fr' ? 'Dépôt de Destination (Retour)' : 'مستودع الاسترجاع (الوجهة)'}
-                  </label>
-                  <select
-                    value={mvtDestDepot}
-                    onChange={(e) => {
-                      setMvtDestDepot(e.target.value);
-                      playBip(600, 0.06);
-                    }}
-                    className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl dark:text-white font-bold"
-                  >
-                    {regionalDepots.map(depotName => (
-                      <option key={depotName} value={depotName}>Dépôt {depotName}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {mvtType === 'maintenance_send' && (
-                <div className="p-3 bg-amber-500/5 rounded-2xl border border-amber-500/10 text-slate-400 text-[11px] leading-relaxed">
-                  {lang === 'fr' 
-                    ? "Les appareils sélectionnés seront marqués sous le statut de maintenance 'Réparation' et associés au pôle technique central de Zahi Glaces."
-                    : "سيتم تحويل حالة الأجهزة المختارة إلى 'صيانة وإصلاح' وربطها بالقسم التقني المركزي لشركة مثلجات زاهي."}
-                </div>
-              )}
-
-              {/* Sélection des Congélateurs / Freezers checklist */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">
-                    {lang === 'fr' ? 'Sélectionner les Congélateurs' : 'اختر الثلاجات المعنية بالنقل'}
-                  </label>
-                  {mvtSelectedFridgeIds.length > 0 && (
-                    <span className="text-[10px] font-black text-sky-600 dark:text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md">
-                      {mvtSelectedFridgeIds.length} Sélectionné(s)
+                  {/* Filter chips / quick tabs */}
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                      {lang === 'fr' ? 'Type :' : 'النوع :'}
                     </span>
-                  )}
-                </div>
 
-                {/* Freezer Realtime search inside checklist */}
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                    <Search className="h-3.5 w-3.5 text-slate-400" />
+                    {[
+                      { id: 'all', labelFr: 'Tous les Mouvements', labelAr: 'كافة التحركات', count: totalMovements },
+                      { id: 'transfer', labelFr: 'Inter-Dépôts', labelAr: 'بين المستودعات', count: interDepotCount },
+                      { id: 'client', labelFr: 'Placements Clients', labelAr: 'توزيع لدى العملاء', count: clientPlacementCount },
+                      { id: 'maintenance', labelFr: 'Maintenance & Atelier', labelAr: 'ورشات وصيانة', count: maintenanceCount }
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => {
+                          setMvtTypeFilter(tab.id as any);
+                          playBip(700, 0.04);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          mvtTypeFilter === tab.id
+                            ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/20'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <span>{lang === 'fr' ? tab.labelFr : tab.labelAr}</span>
+                        <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${
+                          mvtTypeFilter === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                        }`}>
+                          {tab.count}
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                  <input
-                    type="text"
-                    placeholder={lang === 'fr' ? "Rechercher par numéro de série..." : "بحث برقم التسلسل لتسهيل الاختيار..."}
-                    value={mvtFridgeSearchQuery}
-                    onChange={(e) => setMvtFridgeSearchQuery(e.target.value)}
-                    className="w-full text-[11px] pl-8 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-700 dark:text-white font-bold"
-                  />
                 </div>
 
-                {/* Dynamic List Container */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-800/80 rounded-2xl p-2.5 max-h-48 overflow-y-auto space-y-1">
-                  {(() => {
-                    const matched = fridges.filter(f => {
-                      if (mvtFridgeSearchQuery && !f.serialNumber.toLowerCase().includes(mvtFridgeSearchQuery.toLowerCase())) {
-                        return false;
-                      }
-                      if (mvtType === 'depot_transfer' || mvtType === 'client_placement') {
-                        return f.status === 'stock' && f.depot === mvtOriginDepot;
-                      }
-                      if (mvtType === 'service_return') {
-                        return f.status === 'service';
-                      }
-                      if (mvtType === 'maintenance_send') {
-                        return f.status !== 'maintenance';
-                      }
-                      return true;
-                    });
+                {/* 5. MOVEMENTS DISPLAY (Cards View vs Table View) */}
+                <AnimatePresence mode="popLayout">
+                  {displayList.length === 0 ? (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-white dark:bg-slate-850 p-12 rounded-3xl border border-slate-200/80 dark:border-slate-800 text-center space-y-3"
+                    >
+                      <History className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto animate-pulse" />
+                      <h4 className="font-black text-slate-700 dark:text-slate-200 text-sm uppercase">
+                        {lang === 'fr' ? 'Aucun mouvement correspondant trouvé' : 'لم يتم العثور على أي تحركات مطابقة'}
+                      </h4>
+                      <p className="text-xs text-slate-400 max-w-md mx-auto">
+                        {lang === 'fr'
+                          ? 'Modifiez vos critères de recherche ou réinitialisez les filtres pour afficher l\'ensemble de l\'historique.'
+                          : 'يرجى تعديل معايير البحث أو إلغاء تفعيل الفلاتر لعرض كافة سجل التحركات.'}
+                      </p>
+                      {isFilterActive && (
+                        <button
+                          onClick={() => {
+                            setSelectedMvtFridgeSerial('all');
+                            setMvtSearchQuery('');
+                            setMvtTypeFilter('all');
+                            setMvtDepotFilter('all');
+                            playBip(600, 0.05);
+                          }}
+                          className="mt-2 px-4 py-2 bg-sky-600 text-white rounded-xl text-xs font-bold hover:bg-sky-700 transition-colors uppercase"
+                        >
+                          {lang === 'fr' ? 'Réinitialiser Tous les Filtres' : 'إعادة ضبط كافة الفلاتر'}
+                        </button>
+                      )}
+                    </motion.div>
+                  ) : mvtViewMode === 'cards' ? (
+                    
+                    /* ===== CARDS VIEW ===== */
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
+                      {displayList.map((log, index) => {
+                        const durInfo = durationLookup[log.id] || { 
+                          duration: calculateDuration(log.date), 
+                          isCurrent: false 
+                        };
+                        const isInterDepot = (log.fromLocation || '').toLowerCase().includes('dépôt') && (log.toLocation || '').toLowerCase().includes('dépôt');
+                        const isClient = log.toStatus === 'service' || (!(log.toLocation || '').toLowerCase().includes('dépôt') && !(log.toLocation || '').toLowerCase().includes('atelier'));
+                        const isMaint = log.toStatus === 'maintenance' || (log.toLocation || '').toLowerCase().includes('atelier');
 
-                    if (matched.length === 0) {
-                      return (
-                        <div className="p-4 text-center text-slate-400 italic text-[10px]">
-                          {lang === 'fr' ? 'Aucun appareil disponible avec ces filtres.' : 'لا توجد أجهزة متوفرة تطابق هذه المعايير حالياً.'}
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <>
-                        {/* Bulk helper buttons */}
-                        <div className="flex gap-2 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMvtSelectedFridgeIds(matched.map(m => m.id));
-                              playBip(800, 0.05);
-                            }}
-                            className="text-[9px] font-extrabold text-sky-600 dark:text-sky-400 hover:underline uppercase bg-sky-500/5 px-2 py-1 rounded"
+                        return (
+                          <motion.div
+                            key={log.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: Math.min(index * 0.02, 0.3) }}
+                            className="bg-white dark:bg-slate-850 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-sky-500/30 transition-all flex flex-col justify-between space-y-4 group"
                           >
-                            {lang === 'fr' ? 'Sélectionner Tout' : 'تحديد الكل'} ({matched.length})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMvtSelectedFridgeIds([]);
-                              playBip(500, 0.05);
-                            }}
-                            className="text-[9px] font-extrabold text-slate-400 hover:underline uppercase bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded"
-                          >
-                            {lang === 'fr' ? 'Désélectionner' : 'إلغاء التحديد'}
-                          </button>
-                        </div>
-
-                        {matched.map(f => {
-                          const isChecked = mvtSelectedFridgeIds.includes(f.id);
-                          return (
-                            <label
-                              key={f.id}
-                              className={`flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
-                                isChecked
-                                  ? 'bg-sky-500/5 border-sky-500/20 text-sky-700 dark:text-sky-300'
-                                  : 'border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setMvtSelectedFridgeIds([...mvtSelectedFridgeIds, f.id]);
-                                    } else {
-                                      setMvtSelectedFridgeIds(mvtSelectedFridgeIds.filter(id => id !== f.id));
-                                    }
-                                    playBip(800, 0.05);
-                                  }}
-                                  className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                                />
-                                <span className="font-mono font-black text-xxs uppercase tracking-wider">{f.serialNumber}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[8px] font-black uppercase text-slate-500">
-                                  {f.type === 'chest' || f.type === 'AP' ? 'Coffre / AP' : 'Vitrine / AG'}
-                                </span>
-                                <span className="text-[9px] text-slate-400">
-                                  {f.status === 'service' ? (f.client || 'Client') : `Dépôt ${f.depot}`}
+                            {/* Card Top: S/N + Fridge Type + Date */}
+                            <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedMvtFridgeSerial(log.serialNumber);
+                                      setMvtSearchQuery(log.serialNumber);
+                                      playBip(800, 0.08);
+                                    }}
+                                    className="font-mono font-black text-sky-600 dark:text-sky-400 text-sm hover:underline tracking-tight cursor-pointer"
+                                    title={lang === 'fr' ? 'Cliquer pour filtrer uniquement cet appareil' : 'انقر للتصفية حسب هذا الجهاز فقط'}
+                                  >
+                                    {log.serialNumber}
+                                  </button>
+                                  <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-[9px] font-black text-slate-500 uppercase">
+                                    {log.type === 'chest' || log.type === 'AP' 
+                                      ? (lang === 'fr' ? 'Coffre / AP' : 'مجمّد أفقي') 
+                                      : (lang === 'fr' ? 'Vitrine / AG' : 'عرض عمودي')}
+                                  </span>
+                                </div>
+                                <span className={`text-[9px] font-extrabold uppercase mt-1 inline-block ${
+                                  isInterDepot ? 'text-blue-500' :
+                                  isClient ? 'text-emerald-500' :
+                                  isMaint ? 'text-amber-500' : 'text-slate-400'
+                                }`}>
+                                  {isInterDepot ? (lang === 'fr' ? '● Transfert Inter-Dépôts' : '● تحويل بين المستودعات') :
+                                   isClient ? (lang === 'fr' ? '● Placement Chez Client' : '● تسليم لدى عميل') :
+                                   isMaint ? (lang === 'fr' ? '● Envoi en Maintenance' : '● إرسال للصيانة') :
+                                   (lang === 'fr' ? '● Mouvement Logistique' : '● عملية لوجستية')}
                                 </span>
                               </div>
-                            </label>
-                          );
-                        })}
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
 
-              {/* Sélection du Chauffeur Transporteur */}
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                  {t.driverSelect}
-                </label>
-                <select
-                  required
-                  value={mvtDriverId}
-                  onChange={(e) => {
-                    setMvtDriverId(e.target.value);
-                    playBip(600, 0.06);
-                  }}
-                  className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl dark:text-white font-bold"
-                >
-                  <option value="">-- {lang === 'fr' ? 'Choisir le chauffeur transporteur' : 'اختر السائق الناقل'} --</option>
-                  {driversList.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
-              </div>
+                              <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-100 dark:border-slate-800 shrink-0">
+                                <Calendar className="h-3 w-3 text-sky-500" />
+                                <span>{log.date}</span>
+                              </span>
+                            </div>
 
-              {/* Motif / Notes */}
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                  {lang === 'fr' ? 'Motif ou Instructions Spéciales' : 'سبب النقل أو تعليمات لوجستية خاصة'}
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder={lang === 'fr' ? "Ex: Transfert d'ajustement de stock ou réaffectation saisonnière." : "مثال: نقل لموازنة مخزون الصيف..."}
-                  value={mvtNotes}
-                  onChange={(e) => setMvtNotes(e.target.value)}
-                  className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl dark:text-white resize-none font-medium"
-                />
-              </div>
+                            {/* Card Body: Route Journey Visual */}
+                            <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-150 dark:border-slate-800/80 space-y-2.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="flex-1 min-w-0 pr-2">
+                                  <span className="text-[8px] uppercase tracking-wider text-slate-400 block font-black">
+                                    {lang === 'fr' ? 'Provenance (De)' : 'المصدر (من)'}
+                                  </span>
+                                  <b className="text-slate-700 dark:text-slate-300 text-xs truncate block font-bold" title={log.fromLocation}>
+                                    {log.fromLocation}
+                                  </b>
+                                </div>
 
-              <button
-                type="submit"
-                disabled={mvtSelectedFridgeIds.length === 0 || !mvtDriverId}
-                className="w-full py-3 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-200 disabled:dark:bg-slate-800 disabled:text-slate-400 disabled:dark:text-slate-600 text-white rounded-xl font-bold transition-all shadow cursor-pointer uppercase tracking-wider text-xxs font-black"
-              >
-                {lang === 'fr' ? `Enregistrer le Transfert (${mvtSelectedFridgeIds.length})` : `حفظ وتثبيت عملية النقل (${mvtSelectedFridgeIds.length})`}
-              </button>
-            </form>
-          </div>
+                                <div className="p-2 rounded-xl bg-sky-500/10 text-sky-500 shrink-0 shadow-sm">
+                                  <ArrowRightLeft className="h-4 w-4" />
+                                </div>
+
+                                <div className="flex-1 min-w-0 pl-2 text-right">
+                                  <span className="text-[8px] uppercase tracking-wider text-slate-400 block font-black">
+                                    {lang === 'fr' ? 'Destination (Vers)' : 'الوجهة (إلى)'}
+                                  </span>
+                                  <b className="text-slate-900 dark:text-white text-xs truncate block font-black" title={log.toLocation}>
+                                    {log.toLocation}
+                                  </b>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Card Bottom: Duration & Driver & Notes */}
+                            <div className="space-y-2.5 pt-1">
+                              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                                {/* Stay duration */}
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="h-3.5 w-3.5 text-sky-500" />
+                                  <span className="text-[9px] uppercase font-bold text-slate-400">
+                                    {lang === 'fr' ? 'Séjour :' : 'الإقامة :'}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-black ${
+                                    durInfo.isCurrent
+                                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                      : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
+                                  }`}>
+                                    {durInfo.duration} {durInfo.isCurrent && (lang === 'fr' ? '(Actuel)' : '(حالي)')}
+                                  </span>
+                                </div>
+
+                                {/* Driver */}
+                                <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                                  <Truck className="h-3 w-3 text-slate-400" />
+                                  <b className="text-slate-700 dark:text-slate-300 truncate max-w-[120px] font-bold">
+                                    {log.driverName}
+                                  </b>
+                                </div>
+                              </div>
+
+                              {log.notes && (
+                                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl text-[10px] text-slate-500 dark:text-slate-400 italic border border-slate-100 dark:border-slate-800 line-clamp-2">
+                                  "{log.notes}"
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+
+                    /* ===== TABLE VIEW ===== */
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="bg-white dark:bg-slate-850 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden"
+                    >
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200/80 dark:border-slate-800 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                              <th className="p-3.5 text-center w-12">#</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Date & Heure' : 'التاريخ والوقت'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'N° de Série' : 'الرقم التسلسلي'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Type' : 'النوع'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Provenance (De)' : 'المصدر (من)'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Destination (Vers)' : 'الوجهة (إلى)'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Durée Séjour' : 'مدة الإقامة'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Chauffeur' : 'السائق الناقل'}</th>
+                              <th className="p-3.5">{lang === 'fr' ? 'Observations' : 'ملاحظات'}</th>
+                              <th className="p-3.5 text-center">{lang === 'fr' ? 'Fiche' : 'البطاقة'}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {displayList.map((log, idx) => {
+                              const durInfo = durationLookup[log.id] || { 
+                                duration: calculateDuration(log.date), 
+                                isCurrent: false 
+                              };
+
+                              return (
+                                <tr 
+                                  key={log.id}
+                                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
+                                >
+                                  <td className="p-3.5 text-center font-mono text-[10px] text-slate-400 font-bold">
+                                    {idx + 1}
+                                  </td>
+                                  <td className="p-3.5 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                    {log.date}
+                                  </td>
+                                  <td className="p-3.5 font-mono font-black text-sky-600 dark:text-sky-400 whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedMvtFridgeSerial(log.serialNumber);
+                                        setMvtSearchQuery(log.serialNumber);
+                                        playBip(800, 0.08);
+                                      }}
+                                      className="hover:underline cursor-pointer"
+                                    >
+                                      {log.serialNumber}
+                                    </button>
+                                  </td>
+                                  <td className="p-3.5">
+                                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-md text-[9px] font-black uppercase text-slate-500">
+                                      {log.type === 'chest' || log.type === 'AP' ? 'Coffre' : 'Vitrine'}
+                                    </span>
+                                  </td>
+                                  <td className="p-3.5 font-bold text-slate-600 dark:text-slate-300 uppercase text-[11px]">
+                                    {log.fromLocation}
+                                  </td>
+                                  <td className="p-3.5 font-black text-slate-900 dark:text-white uppercase text-[11px]">
+                                    {log.toLocation}
+                                  </td>
+                                  <td className="p-3.5 whitespace-nowrap">
+                                    <span className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-black ${
+                                      durInfo.isCurrent
+                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                    }`}>
+                                      {durInfo.duration} {durInfo.isCurrent && '(Actuel)'}
+                                    </span>
+                                  </td>
+                                  <td className="p-3.5 font-bold text-slate-700 dark:text-slate-300">
+                                    {log.driverName}
+                                  </td>
+                                  <td className="p-3.5 text-slate-500 dark:text-slate-400 italic text-[11px] max-w-xs truncate">
+                                    {log.notes || '—'}
+                                  </td>
+                                  <td className="p-3.5 text-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedMvtFridgeSerial(log.serialNumber);
+                                        setMvtSearchQuery(log.serialNumber);
+                                        playBip(800, 0.08);
+                                      }}
+                                      className="p-1.5 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500 hover:text-white transition-all"
+                                      title={lang === 'fr' ? 'Voir la fiche complète' : 'عرض البطاقة الكاملة'}
+                                    >
+                                      <ChevronRight className="h-3.5 w-3.5" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+              </div>
+            );
+          })()}
 
           {/* PRINTABLE WORKSPACE (Only visible on paper / printer dialog) */}
           {selectedMvtFridgeSerial !== 'all' && (() => {
