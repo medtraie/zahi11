@@ -3,8 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { 
   Truck, 
   Users, 
@@ -25,7 +27,19 @@ import {
   RotateCcw,
   Gauge,
   Compass,
-  History
+  History,
+  Building2,
+  Clock,
+  ArrowRight,
+  Maximize2,
+  Minimize2,
+  Layers,
+  Wrench,
+  Radio,
+  Eye,
+  Activity,
+  Zap,
+  RefreshCw
 } from 'lucide-react';
 
 export interface Vehicle {
@@ -40,6 +54,16 @@ export interface Vehicle {
   fuelLevel: number; // percentage
   status: 'Disponible' | 'En transit' | 'En livraison' | 'En maintenance' | 'Alerte';
   depotAssigned: string; // e.g. Usine, Casablanca, Marrakech
+  // Enhanced Tracking & Geofencing fields
+  currentDepotNear?: string;
+  inDepotVisits?: number;
+  outDepotExits?: number;
+  neverEnteredDepot?: boolean;
+  daysAwayFromDepot?: number;
+  lastDepotEntryDate?: string;
+  speedKmh?: number;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Driver {
@@ -181,7 +205,153 @@ export default function VehicleDriverModule({
     return history;
   };
   
-  // --- Form States ---
+  // --- Morocco Zahi Ice Dépôts Master GPS Coordinates & Metadata ---
+  const ZAHI_DEPOTS_METADATA: Record<string, {
+    name: string;
+    nameAr: string;
+    lat: number;
+    lng: number;
+    address: string;
+    capacityCartons: number;
+    color: string;
+    type: 'Usine' | 'Dépôt Régional';
+  }> = {
+    'Casablanca': {
+      name: 'Casablanca (Tit Mellil & Maârif)',
+      nameAr: 'مستودع الدار البيضاء (تيط مليل والمعاريف)',
+      lat: 33.5530,
+      lng: -7.4830,
+      address: 'Zone Industrielle Tit Mellil, Casablanca',
+      capacityCartons: 8500,
+      color: '#0284c7',
+      type: 'Dépôt Régional'
+    },
+    'Usine': {
+      name: 'Usine Centrale Zahi (Casablanca)',
+      nameAr: 'مصنع زاهي الرئيسي للآيس كريم',
+      lat: 33.5680,
+      lng: -7.5300,
+      address: 'Complexe Industriel Zahi, Ain Sebaâ, Casablanca',
+      capacityCartons: 25000,
+      color: '#4f46e5',
+      type: 'Usine'
+    },
+    'Marrakech': {
+      name: 'Dépôt Régional Marrakech (Gueliz)',
+      nameAr: 'مستودع مراكش الإقليمي (جيليز)',
+      lat: 31.6295,
+      lng: -7.9811,
+      address: 'Zone Industrielle Sidi Ghanem, Marrakech',
+      capacityCartons: 6000,
+      color: '#f59e0b',
+      type: 'Dépôt Régional'
+    },
+    'Agadir': {
+      name: 'Dépôt Régional Agadir (Anza)',
+      nameAr: 'مستودع أكادير الإقليمي (أنزا والقطب السياحي)',
+      lat: 30.4278,
+      lng: -9.5981,
+      address: 'Zone Industrielle Anza, Agadir',
+      capacityCartons: 5200,
+      color: '#10b981',
+      type: 'Dépôt Régional'
+    },
+    'Tanger': {
+      name: 'Dépôt Régional Tanger (Gzenaya TFZ)',
+      nameAr: 'مستودع طنجة الإقليمي (المنطقة الحرة كزناية)',
+      lat: 35.7595,
+      lng: -5.8340,
+      address: 'TFZ Zone Franche Gzenaya, Tanger',
+      capacityCartons: 5800,
+      color: '#06b6d4',
+      type: 'Dépôt Régional'
+    },
+    'Fès': {
+      name: 'Dépôt Régional Fès (Ain Chkef)',
+      nameAr: 'مستودع فاس الإقليمي (عين الشقف)',
+      lat: 34.0331,
+      lng: -5.0003,
+      address: 'Quartier Industriel Sidi Brahim, Fès',
+      capacityCartons: 4800,
+      color: '#8b5cf6',
+      type: 'Dépôt Régional'
+    },
+    'Meknès': {
+      name: 'Dépôt Régional Meknès (Hamria)',
+      nameAr: 'مستودع مكناس الإقليمي (حمرية ومجاط)',
+      lat: 33.8935,
+      lng: -5.5473,
+      address: 'Zone Industrielle Mejjat, Meknès',
+      capacityCartons: 4000,
+      color: '#ec4899',
+      type: 'Dépôt Régional'
+    },
+    'Oujda': {
+      name: 'Dépôt Régional Oujda (Zone Franche)',
+      nameAr: 'مستودع وجدة والشرق (المنطقة الحرة)',
+      lat: 34.6814,
+      lng: -1.9086,
+      address: 'Technopole Zone Franche, Oujda',
+      capacityCartons: 4200,
+      color: '#f97316',
+      type: 'Dépôt Régional'
+    },
+    'Safi': {
+      name: 'Dépôt Régional Safi (Port)',
+      nameAr: 'مستودع آسفي الإقليمي (الحي الصناعي المينائي)',
+      lat: 32.2994,
+      lng: -9.2372,
+      address: 'Zone Industrielle Portuaire, Safi',
+      capacityCartons: 3500,
+      color: '#14b8a6',
+      type: 'Dépôt Régional'
+    },
+    'Rabat': {
+      name: 'Dépôt Régional Rabat (Hay Riad)',
+      nameAr: 'مستودع الرباط سلا تمارة',
+      lat: 34.0209,
+      lng: -6.8416,
+      address: 'Avenue de France, Agdal / Hay Riad, Rabat',
+      capacityCartons: 4500,
+      color: '#3b82f6',
+      type: 'Dépôt Régional'
+    },
+    'Berrechid': {
+      name: 'Dépôt Régional Berrechid',
+      nameAr: 'مستودع برشيد والشاوية',
+      lat: 33.2655,
+      lng: -7.5875,
+      address: 'Zone Industrielle Nord, Berrechid',
+      capacityCartons: 3800,
+      color: '#eab308',
+      type: 'Dépôt Régional'
+    },
+    'Laâyoune': {
+      name: 'Dépôt Régional Laâyoune (Sud)',
+      nameAr: 'مستودع العيون والأقاليم الجنوبية',
+      lat: 27.1253,
+      lng: -13.1625,
+      address: 'Zone Industrielle El Marsa, Laâyoune',
+      capacityCartons: 3200,
+      color: '#ef4444',
+      type: 'Dépôt Régional'
+    }
+  };
+
+  // Tracking state for the interactive fleet map
+  const [selectedDepotFilter, setSelectedDepotFilter] = useState<string>('Casablanca');
+  const [trackingFilterCategory, setTrackingFilterCategory] = useState<'all' | 'near' | 'panne' | 'never' | 'absent'>('all');
+  const [selectedVehicleOnMap, setSelectedVehicleOnMap] = useState<string | null>(null);
+  const [isMapFullscreen, setIsMapFullscreen] = useState<boolean>(false);
+  const [isSimulatingMovement, setIsSimulatingMovement] = useState<boolean>(true);
+
+  // Leaflet map refs
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const markersGroupRef = useRef<L.LayerGroup | null>(null);
+  const depotCircleRef = useRef<L.Circle | null>(null);
+
+  // Form States
   const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
   const [newVehicle, setNewVehicle] = useState({
     id: '',
@@ -207,7 +377,230 @@ export default function VehicleDriverModule({
   const activeDriversCount = drivers.filter(d => d.status !== 'En repos').length;
   const alertVehiclesCount = vehicles.filter(v => v.currentTemp > -18 || v.status === 'Alerte').length;
 
-  // --- Handlers ---
+  // --- Handlers & Enriched Fleet Tracking Simulator Data ---
+  // Generate deterministic realistic tracking telemetry for each vehicle
+  const enrichedVehicles = vehicles.map((v, index) => {
+    const assigned = v.depotAssigned || 'Casablanca';
+    const depotInfo = ZAHI_DEPOTS_METADATA[assigned] || ZAHI_DEPOTS_METADATA['Casablanca'];
+
+    // Define custom telemetry states
+    const isPanne = v.status === 'En maintenance' || v.status === 'Alerte' || v.currentTemp > -18;
+    const isNeverEntered = index === 2 || v.id === 'TRK-EXP-103'; // Vehicle that hasn't entered depot yet
+    const isAbsentLongTime = index === 1 || v.id === 'TRK-EXP-102'; // Vehicle absent for 8+ days
+
+    // Simulated visits & exits
+    const inVisits = isNeverEntered ? 0 : (24 + (index * 7) % 31);
+    const outExits = isNeverEntered ? 0 : (inVisits + (v.status === 'En transit' || v.status === 'En livraison' ? 1 : 0));
+    const daysAway = isNeverEntered ? 45 : (isAbsentLongTime ? 12 : (v.status === 'Disponible' ? 0 : 3));
+    const lastEntry = isNeverEntered 
+      ? 'Jamais / En transit usine' 
+      : (isAbsentLongTime ? 'Il y a 12 jours (01/10/2026)' : 'Hier 18:45');
+
+    // Calculate simulated GPS coordinates near assigned depot or in-transit
+    let lat = depotInfo.lat;
+    let lng = depotInfo.lng;
+    let isNearDepot = false;
+
+    if (v.status === 'Disponible' || isPanne) {
+      // Parked directly inside or right at depot yard perimeter (~200m)
+      lat = depotInfo.lat + ((index % 3) - 1) * 0.003;
+      lng = depotInfo.lng + (((index + 1) % 3) - 1) * 0.003;
+      isNearDepot = true;
+    } else if (v.status === 'En livraison') {
+      // In surrounding city area delivery (within 5-15km)
+      lat = depotInfo.lat + (Math.sin(index * 1.5) * 0.045);
+      lng = depotInfo.lng + (Math.cos(index * 1.5) * 0.045);
+      isNearDepot = false;
+    } else {
+      // En transit on highway route
+      lat = depotInfo.lat + (Math.sin(index * 2.2) * 0.18);
+      lng = depotInfo.lng + (Math.cos(index * 2.2) * 0.18);
+      isNearDepot = false;
+    }
+
+    const speed = v.status === 'Disponible' || isPanne ? 0 : (45 + (index * 8) % 40);
+
+    return {
+      ...v,
+      currentDepotNear: assigned,
+      inDepotVisits: v.inDepotVisits ?? inVisits,
+      outDepotExits: v.outDepotExits ?? outExits,
+      neverEnteredDepot: v.neverEnteredDepot ?? isNeverEntered,
+      daysAwayFromDepot: v.daysAwayFromDepot ?? daysAway,
+      lastDepotEntryDate: v.lastDepotEntryDate ?? lastEntry,
+      speedKmh: speed,
+      isNearDepot,
+      isPanne,
+      lat,
+      lng
+    };
+  });
+
+  // Filter vehicles per selected depot and tracking category
+  const depotVehicles = enrichedVehicles.filter(v => v.depotAssigned === selectedDepotFilter);
+
+  const filteredTrackingVehicles = depotVehicles.filter(v => {
+    if (trackingFilterCategory === 'near') return v.isNearDepot;
+    if (trackingFilterCategory === 'panne') return v.isPanne;
+    if (trackingFilterCategory === 'never') return v.neverEnteredDepot;
+    if (trackingFilterCategory === 'absent') return (v.daysAwayFromDepot || 0) >= 5;
+    return true;
+  });
+
+  // Initialize and synchronize Leaflet Map with smooth depot animations & markers
+  useEffect(() => {
+    if (activeSubTab === 'chauffeurs' || !mapContainerRef.current) return;
+
+    const currentDepot = ZAHI_DEPOTS_METADATA[selectedDepotFilter] || ZAHI_DEPOTS_METADATA['Casablanca'];
+
+    if (!mapInstanceRef.current) {
+      const map = L.map(mapContainerRef.current, {
+        center: [currentDepot.lat, currentDepot.lng],
+        zoom: 12,
+        zoomControl: true,
+        attributionControl: false
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+      }).addTo(map);
+
+      const markersGroup = L.layerGroup().addTo(map);
+      markersGroupRef.current = markersGroup;
+      mapInstanceRef.current = map;
+    }
+
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    // Smoothly fly to selected depot with cinematic animation
+    map.flyTo([currentDepot.lat, currentDepot.lng], 12, {
+      duration: 1.2,
+      easeLinearity: 0.25
+    });
+
+    // Clear old markers and circles
+    if (markersGroupRef.current) {
+      markersGroupRef.current.clearLayers();
+    }
+    if (depotCircleRef.current) {
+      map.removeLayer(depotCircleRef.current);
+    }
+
+    // Draw animated Geofencing Radius Perimeter Circle around Dépôt (5km radius)
+    const geofenceCircle = L.circle([currentDepot.lat, currentDepot.lng], {
+      color: currentDepot.color,
+      fillColor: currentDepot.color,
+      fillOpacity: 0.12,
+      weight: 2,
+      dashArray: '6, 8',
+      radius: 4500 // 4.5 km geofence radius
+    }).addTo(map);
+    depotCircleRef.current = geofenceCircle;
+
+    // Add Depot Central Hub Landmark Marker
+    const depotIconHtml = `
+      <div style="background: ${currentDepot.color}; width: 44px; height: 44px; border-radius: 14px; border: 3px solid white; box-shadow: 0 8px 20px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: white;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+      </div>
+    `;
+    const depotIcon = L.divIcon({
+      className: 'zahi-depot-pin',
+      html: depotIconHtml,
+      iconSize: [44, 44],
+      iconAnchor: [22, 22]
+    });
+
+    const depotMarker = L.marker([currentDepot.lat, currentDepot.lng], { icon: depotIcon });
+    depotMarker.bindPopup(`
+      <div style="min-width: 220px; font-family: sans-serif; padding: 2px;">
+        <div style="font-weight: 900; font-size: 13px; color: #0f172a; border-bottom: 2px solid ${currentDepot.color}; padding-bottom: 4px; margin-bottom: 6px;">
+          🏢 ${currentDepot.name}
+        </div>
+        <div style="font-size: 11px; color: #475569; margin-bottom: 6px;">📍 ${currentDepot.address}</div>
+        <div style="font-size: 10px; background: #f8fafc; padding: 6px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between;">
+          <span>📦 Capacité Stock :</span>
+          <b>${currentDepot.capacityCartons.toLocaleString()} Ctns</b>
+        </div>
+      </div>
+    `);
+    markersGroupRef.current?.addLayer(depotMarker);
+
+    // Place Vehicle Markers for this depot
+    depotVehicles.forEach(v => {
+      const isWarn = v.isPanne;
+      const isNear = v.isNearDepot;
+      const pinColor = isWarn ? '#ef4444' : (isNear ? '#10b981' : '#3b82f6');
+
+      const vehicleIconHtml = `
+        <div style="background: ${pinColor}; width: 36px; height: 36px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 14px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white; position: relative;">
+          ${isWarn ? '<span style="position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; background: #dc2626; border-radius: 50%; border: 2px solid white; animation: ping 1.2s infinite;"></span>' : ''}
+          ${isNear ? '<span style="position: absolute; bottom: -3px; right: -3px; width: 10px; height: 10px; background: #10b981; border-radius: 50%; border: 2px solid white;"></span>' : ''}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+        </div>
+      `;
+      const vIcon = L.divIcon({
+        className: 'zahi-vehicle-pin',
+        html: vehicleIconHtml,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      const vMarker = L.marker([v.lat || currentDepot.lat, v.lng || currentDepot.lng], { icon: vIcon });
+      
+      const popupContent = `
+        <div style="min-width: 240px; font-family: sans-serif; padding: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <b style="font-size: 13px; color: #0f172a;">🚛 ${v.id}</b>
+            <span style="font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; background: ${isWarn ? '#fee2e2; color: #b91c1c;' : (isNear ? '#dcfce7; color: #15803d;' : '#e0e7ff; color: #3730a3;')}">${v.status}</span>
+          </div>
+          <div style="font-size: 11px; color: #334155; margin-bottom: 4px;"><b>${v.model}</b> (${v.plateNumber})</div>
+          <div style="font-size: 10px; color: #64748b; margin-bottom: 8px;">Dépôt : <b>${v.depotAssigned}</b> • Chauffeur : <b>${drivers.find(d => d.id === v.assignedDriverId)?.name || 'Non assigné'}</b></div>
+          <div style="background: #f1f5f9; padding: 8px; border-radius: 8px; font-size: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+            <div>❄️ Temp : <b style="color: ${v.currentTemp > -18 ? '#dc2626' : '#0284c7'}">${v.currentTemp}°C</b></div>
+            <div>⚡ Vitesse : <b>${v.speedKmh} km/h</b></div>
+            <div>📥 Entrées : <b>${v.inDepotVisits} fois</b></div>
+            <div>📤 Sorties : <b>${v.outDepotExits} fois</b></div>
+            <div style="grid-column: span 2; margin-top: 2px; color: ${v.neverEnteredDepot ? '#dc2626' : '#475569'}">
+              ${v.neverEnteredDepot ? '⚠️ Jamais entré dans ce dépôt' : `⏳ Absent depuis : <b>${v.daysAwayFromDepot} jours</b>`}
+            </div>
+          </div>
+        </div>
+      `;
+
+      vMarker.bindPopup(popupContent);
+      vMarker.on('click', () => {
+        setSelectedVehicleOnMap(v.id);
+      });
+
+      markersGroupRef.current?.addLayer(vMarker);
+    });
+
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [selectedDepotFilter, vehicles, activeSubTab, isSimulatingMovement]);
+
+  // Periodic Micro-Jitter motion simulation for animated live fleet effect
+  useEffect(() => {
+    if (!isSimulatingMovement) return;
+    const interval = setInterval(() => {
+      setVehicles(prev => prev.map((v, i) => {
+        if (v.status === 'En transit' || v.status === 'En livraison') {
+          return {
+            ...v,
+            fuelLevel: Math.max(15, v.fuelLevel - (Math.random() > 0.8 ? 1 : 0))
+          };
+        }
+        return v;
+      }));
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isSimulatingMovement]);
+
+  // Handlers
   const handleToggleRefrigeration = (vId: string) => {
     setVehicles(prev => prev.map(v => {
       if (v.id === vId) {
@@ -873,103 +1266,402 @@ export default function VehicleDriverModule({
         </motion.div>
       </AnimatePresence>
 
-      {/* 5. Interactive live view simulator - "Suivi d'expédition" */}
+      {/* 5. Comprehensive Interactive Fleet Tracking Map Simulator (Simulée & Réaliste) */}
       {activeSubTab !== 'chauffeurs' && (
-        <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-850 space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-            <h3 className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
-              <Navigation className="h-4 w-4 text-sky-500 animate-pulse" />
-              {isAr ? 'محاكي الخريطة الحية ومواقع الشحن والتوزيع' : 'Carte Interactive de Suivi de Flotte (Simulée)'}
-            </h3>
-            <span className="text-[10px] px-2.5 py-0.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 rounded-sm font-bold uppercase">
-              GPS Actif (10Hz)
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Live stats sidebar list */}
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-              {vehicles.map(v => (
-                <div key={v.id} className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-xxs">
-                  <div className="flex items-center gap-2">
-                    <Truck className={`h-4 w-4 ${v.currentTemp > -18 ? 'text-rose-500' : 'text-sky-500'}`} />
-                    <div>
-                      <span className="font-bold text-slate-700 dark:text-slate-300 block">{v.id}</span>
-                      <span className="text-[9px] text-slate-400">{v.depotAssigned} → {v.status}</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`font-mono font-bold ${v.currentTemp > -18 ? 'text-rose-500' : 'text-sky-500'}`}>{v.currentTemp}°C</span>
-                    <span className="text-[9px] text-slate-400 block">{isAr ? 'قمر صناعي متصل' : 'GPS Connecté'}</span>
-                  </div>
+        <div className={`bg-white dark:bg-slate-950 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl space-y-5 transition-all ${isMapFullscreen ? 'fixed inset-4 z-50 overflow-y-auto' : ''}`}>
+          
+          {/* Top Header Controls Bar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 bg-gradient-to-br from-sky-500 to-indigo-600 text-white rounded-xl shadow-md shadow-sky-500/20">
+                  <Navigation className="h-5 w-5 animate-pulse" />
+                </span>
+                <div>
+                  <h3 className="text-base font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight flex items-center gap-2">
+                    <span>{isAr ? 'الخريطة التفاعلية لتتبع الأسطول (محاكاة ذكية شاملة)' : 'Carte Interactive de Suivi de Flotte (Simulée)'}</span>
+                    <span className="px-2 py-0.5 bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 text-[10px] rounded-full font-mono font-bold tracking-wider border border-sky-200 dark:border-sky-800">
+                      IoT Live 10Hz
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {isAr 
+                      ? 'مراقبة تواجد المركبات قرب المستودعات، حركات الدخول والخروج، الأعطال، والغائبين عن المستودع مع محاكاة مقربة' 
+                      : 'Supervision en temps réel des dépôts Zahi : proximité, entrées/sorties, pannes, absences prolongées et télémétrie GPS.'}
+                  </p>
                 </div>
-              ))}
+              </div>
             </div>
 
-            {/* Simulated Live visual map with routes */}
-            <div className="lg:col-span-2 bg-slate-900 rounded-2xl p-4 min-h-[18rem] relative flex items-center justify-center border border-slate-800 shadow-inner overflow-hidden">
-              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]" />
-              
-              {/* Dynamic decorative radar rings */}
-              <div className="absolute h-48 w-48 rounded-full border border-sky-500/10 animate-ping pointer-events-none" />
-              <div className="absolute h-24 w-24 rounded-full border border-indigo-500/20 pointer-events-none" />
+            {/* Quick Actions & Fullscreen */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setIsSimulatingMovement(!isSimulatingMovement)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isSimulatingMovement 
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' 
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                }`}
+              >
+                <Activity className="h-3.5 w-3.5 animate-spin-slow" />
+                <span>{isSimulatingMovement ? (isAr ? 'المحاكاة نشطة' : 'Simulation Active') : (isAr ? 'إيقاف المحاكاة' : 'En pause')}</span>
+              </button>
 
-              {/* Central hub marker */}
-              <div className="absolute text-center z-10">
-                <div className="p-2.5 bg-sky-500 text-white rounded-full shadow-lg shadow-sky-500/20 animate-pulse inline-block">
-                  <Compass className="h-5 w-5 animate-spin-slow" />
-                </div>
-                <span className="block text-[9px] font-bold text-sky-400 uppercase tracking-widest mt-1">Zahi Central Hub</span>
-              </div>
+              <button
+                onClick={() => setIsMapFullscreen(!isMapFullscreen)}
+                className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs transition-colors cursor-pointer"
+                title={isMapFullscreen ? 'Réduire' : 'Plein écran'}
+              >
+                {isMapFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
 
-              {/* Interactive vehicle nodes on the screen */}
-              {vehicles.map((v, idx) => {
-                const angle = (idx * 2 * Math.PI) / vehicles.length;
-                const distance = 80 + (idx * 12);
-                const x = Math.cos(angle) * distance;
-                const y = Math.sin(angle) * distance;
-                const isWarn = v.currentTemp > -18;
+          {/* Dépôts Selector Bar with live badge indicators */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1">
+                <Building2 className="h-3.5 w-3.5 text-indigo-500" />
+                {isAr ? 'اختر المستودع للتقريب وتتبع مركباته :' : 'Sélectionner un dépôt pour zoom automatique & analyse :'}
+              </span>
+              <span className="text-[10px] font-mono text-slate-400">
+                {Object.keys(ZAHI_DEPOTS_METADATA).length} {isAr ? 'مستودعات مجهزة بـ GPS' : 'sites logistiques'}
+              </span>
+            </div>
+
+            {/* Scrollable list of clickable depot pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+              {Object.entries(ZAHI_DEPOTS_METADATA).map(([dKey, dInfo]) => {
+                const countAssigned = enrichedVehicles.filter(v => v.depotAssigned === dKey).length;
+                const countNear = enrichedVehicles.filter(v => v.depotAssigned === dKey && v.isNearDepot).length;
+                const isSelected = selectedDepotFilter === dKey;
 
                 return (
-                  <motion.div
-                    key={v.id}
-                    animate={{
-                      x: [x, x + (Math.random() * 8 - 4), x],
-                      y: [y, y + (Math.random() * 8 - 4), y]
+                  <button
+                    key={dKey}
+                    onClick={() => {
+                      setSelectedDepotFilter(dKey);
+                      setSelectedVehicleOnMap(null);
                     }}
-                    transition={{
-                      repeat: Infinity,
-                      duration: 4 + idx,
-                      ease: "easeInOut"
-                    }}
-                    style={{ position: 'absolute' }}
-                    className="flex flex-col items-center cursor-pointer z-20 group"
+                    className={`shrink-0 px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-600/30 scale-102 ring-2 ring-sky-300 dark:ring-sky-700'
+                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800'
+                    }`}
                   >
-                    <div className={`p-2 rounded-lg shadow-md transition-all ${
-                      isWarn 
-                        ? 'bg-rose-500 text-white animate-bounce' 
-                        : 'bg-slate-950 text-sky-400 border border-sky-500/30 hover:border-sky-400 group-hover:scale-110'
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: dInfo.color }} />
+                    <span>{dKey}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                      isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                     }`}>
-                      <Truck className="h-3.5 w-3.5" />
-                    </div>
-                    
-                    {/* Tooltip hovering on map */}
-                    <div className="bg-slate-950 text-[8px] text-white p-1 rounded border border-slate-800 mt-1 pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity font-mono text-center">
-                      <b className="block text-[9px] text-sky-300">{v.id}</b>
-                      <span>{v.currentTemp}°C</span>
-                    </div>
-                  </motion.div>
+                      {countNear}/{countAssigned}
+                    </span>
+                  </button>
                 );
               })}
+            </div>
+          </div>
 
-              <div className="absolute bottom-3 left-3 text-[10px] text-slate-500 flex items-center gap-1.5 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
-                <span className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
-                {isAr ? 'محاكاة حركة المركبات بالزمن الفعلي' : 'Visualisation dynamique en temps réel'}
+          {/* Dépôt Telemetry KPI Cards Bar (5 key criteria required by user) */}
+          {(() => {
+            const currentDepotInfo = ZAHI_DEPOTS_METADATA[selectedDepotFilter] || ZAHI_DEPOTS_METADATA['Casablanca'];
+            const vehiclesNear = depotVehicles.filter(v => v.isNearDepot);
+            const vehiclesPanne = depotVehicles.filter(v => v.isPanne);
+            const vehiclesNever = depotVehicles.filter(v => v.neverEnteredDepot);
+            const vehiclesAbsent = depotVehicles.filter(v => (v.daysAwayFromDepot || 0) >= 5);
+            const totalVisitsIn = depotVehicles.reduce((sum, v) => sum + (v.inDepotVisits || 0), 0);
+            const totalExitsOut = depotVehicles.reduce((sum, v) => sum + (v.outDepotExits || 0), 0);
+
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                
+                {/* 1. Proximité Dépôt */}
+                <div 
+                  onClick={() => setTrackingFilterCategory(trackingFilterCategory === 'near' ? 'all' : 'near')}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    trackingFilterCategory === 'near' 
+                      ? 'bg-emerald-500/15 border-emerald-500 ring-2 ring-emerald-400 shadow-md' 
+                      : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800 hover:border-emerald-400'
+                  }`}
+                >
+                  <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                    <span className="text-[10px] font-black uppercase tracking-wider">{isAr ? 'مركبات بقرب المستودع' : 'Proches du Dépôt'}</span>
+                    <MapPin className="h-4 w-4" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span className="text-xl font-black font-mono text-slate-800 dark:text-white">{vehiclesNear.length}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">/ {depotVehicles.length} camions</span>
+                  </div>
+                  <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium mt-1 block">
+                    {isAr ? 'داخل محيط 4.5 كم' : '< 4.5 km du portail'}
+                  </span>
+                </div>
+
+                {/* 2. Nombre de fois dans le dépôt (In) */}
+                <div className="p-3.5 rounded-2xl border bg-slate-50 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800">
+                  <div className="flex justify-between items-center text-sky-600 dark:text-sky-400">
+                    <span className="text-[10px] font-black uppercase tracking-wider">{isAr ? 'عدد مرات الدخول' : 'Entrées Dépôt'}</span>
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span className="text-xl font-black font-mono text-sky-600 dark:text-sky-400">{totalVisitsIn}</span>
+                    <span className="text-[10px] text-slate-400">{isAr ? 'مرة' : 'visites'}</span>
+                  </div>
+                  <span className="text-[9px] text-slate-400 mt-1 block font-mono">{isAr ? 'سجل شهري تراكمي' : 'Cumul ce mois'}</span>
+                </div>
+
+                {/* 3. Nombre de fois sorties (Out) */}
+                <div className="p-3.5 rounded-2xl border bg-slate-50 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800">
+                  <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
+                    <span className="text-[10px] font-black uppercase tracking-wider">{isAr ? 'عدد مرات المغادرة' : 'Sorties Dépôt'}</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span className="text-xl font-black font-mono text-indigo-600 dark:text-indigo-400">{totalExitsOut}</span>
+                    <span className="text-[10px] text-slate-400">{isAr ? 'مغادرة' : 'départs'}</span>
+                  </div>
+                  <span className="text-[9px] text-slate-400 mt-1 block font-mono">{isAr ? 'مهام توزيع وشحن' : 'Missions de livraison'}</span>
+                </div>
+
+                {/* 4. Jamais entré dans le dépôt */}
+                <div 
+                  onClick={() => setTrackingFilterCategory(trackingFilterCategory === 'never' ? 'all' : 'never')}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    trackingFilterCategory === 'never' 
+                      ? 'bg-amber-500/15 border-amber-500 ring-2 ring-amber-400 shadow-md' 
+                      : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800 hover:border-amber-400'
+                  }`}
+                >
+                  <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
+                    <span className="text-[10px] font-black uppercase tracking-wider">{isAr ? 'لم تدخل المستودع' : 'Jamais Entrés'}</span>
+                    <AlertTriangle className="h-4 w-4" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span className="text-xl font-black font-mono text-amber-600 dark:text-amber-400">{vehiclesNever.length}</span>
+                    <span className="text-[10px] text-slate-400">véhicules</span>
+                  </div>
+                  <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium mt-1 block">
+                    {isAr ? 'تتطلب فحص التسجيل' : 'En route / usine'}
+                  </span>
+                </div>
+
+                {/* 5. Véhicules en Panne */}
+                <div 
+                  onClick={() => setTrackingFilterCategory(trackingFilterCategory === 'panne' ? 'all' : 'panne')}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    trackingFilterCategory === 'panne' 
+                      ? 'bg-rose-500/15 border-rose-500 ring-2 ring-rose-400 shadow-md' 
+                      : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800 hover:border-rose-400'
+                  }`}
+                >
+                  <div className="flex justify-between items-center text-rose-600 dark:text-rose-400">
+                    <span className="text-[10px] font-black uppercase tracking-wider">{isAr ? 'مركبات في عطل (Panne)' : 'En Panne'}</span>
+                    <Wrench className="h-4 w-4 animate-bounce" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span className="text-xl font-black font-mono text-rose-600 dark:text-rose-400">{vehiclesPanne.length}</span>
+                    <span className="text-[10px] text-rose-500 font-bold">alertes</span>
+                  </div>
+                  <span className="text-[9px] text-rose-500 mt-1 block">
+                    {isAr ? 'حرارة > -18°م أو صيانة' : 'Froid ou mécanique'}
+                  </span>
+                </div>
+
+                {/* 6. Absent depuis longtemps */}
+                <div 
+                  onClick={() => setTrackingFilterCategory(trackingFilterCategory === 'absent' ? 'all' : 'absent')}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    trackingFilterCategory === 'absent' 
+                      ? 'bg-purple-500/15 border-purple-500 ring-2 ring-purple-400 shadow-md' 
+                      : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800 hover:border-purple-400'
+                  }`}
+                >
+                  <div className="flex justify-between items-center text-purple-600 dark:text-purple-400">
+                    <span className="text-[10px] font-black uppercase tracking-wider">{isAr ? 'لم تدخل منذ مدة' : 'Absents Prolongés'}</span>
+                    <Clock className="h-4 w-4" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span className="text-xl font-black font-mono text-purple-600 dark:text-purple-400">{vehiclesAbsent.length}</span>
+                    <span className="text-[10px] text-slate-400">&gt; 5 jours</span>
+                  </div>
+                  <span className="text-[9px] text-purple-600 dark:text-purple-400 font-medium mt-1 block">
+                    {isAr ? 'تنبيه غياب طويل' : 'Surveillance requise'}
+                  </span>
+                </div>
+
               </div>
+            );
+          })()}
+
+          {/* Main Map & Live Vehicle Telemetry Panel */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            
+            {/* Left Column: Interactive Vehicle Telemetry List for Selected Dépôt */}
+            <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+              <div className="flex justify-between items-center pb-1">
+                <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  {isAr ? 'أسطول المستودع :' : 'Véhicules du dépôt :'} ({filteredTrackingVehicles.length})
+                </span>
+                {trackingFilterCategory !== 'all' && (
+                  <button 
+                    onClick={() => setTrackingFilterCategory('all')}
+                    className="text-[10px] text-sky-600 dark:text-sky-400 font-bold hover:underline"
+                  >
+                    {isAr ? 'عرض الكل' : 'Réinitialiser filtre'}
+                  </button>
+                )}
+              </div>
+
+              {filteredTrackingVehicles.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
+                  {isAr ? 'لا توجد مركبات تطابق هذا الفلتر في هذا المستودع.' : 'Aucun véhicule ne correspond à ce filtre.'}
+                </div>
+              ) : (
+                filteredTrackingVehicles.map(v => {
+                  const isSelected = selectedVehicleOnMap === v.id;
+                  const driverName = drivers.find(d => d.id === v.assignedDriverId)?.name || (isAr ? 'سائق غير محدد' : 'Chauffeur non assigné');
+
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => {
+                        setSelectedVehicleOnMap(v.id);
+                        if (mapInstanceRef.current && v.lat && v.lng) {
+                          mapInstanceRef.current.flyTo([v.lat, v.lng], 14, { duration: 0.8 });
+                        }
+                      }}
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
+                        isSelected 
+                          ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-500 shadow-md ring-2 ring-sky-400/50' 
+                          : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800 hover:border-sky-400'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2">
+                          <div className={`p-2 rounded-xl text-white ${
+                            v.isPanne ? 'bg-rose-500 animate-bounce' : (v.isNearDepot ? 'bg-emerald-500' : 'bg-sky-600')
+                          }`}>
+                            <Truck className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <span className="font-black text-xs text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                              {v.id}
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 font-mono font-normal">
+                                {v.plateNumber}
+                              </span>
+                            </span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                              {v.model} • {driverName}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase ${
+                          v.isPanne 
+                            ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300' 
+                            : (v.isNearDepot 
+                              ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300' 
+                              : 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300')
+                        }`}>
+                          {v.isPanne ? 'En Panne' : (v.isNearDepot ? 'Proche Dépôt' : v.status)}
+                        </span>
+                      </div>
+
+                      {/* Micro Telemetry Metrics */}
+                      <div className="mt-3 pt-2 border-t border-slate-200/70 dark:border-slate-800 grid grid-cols-3 gap-2 text-[10px]">
+                        <div>
+                          <span className="text-slate-400 block text-[9px]">{isAr ? 'الحرارة' : 'Température'}</span>
+                          <span className={`font-mono font-black ${v.currentTemp > -18 ? 'text-rose-500' : 'text-sky-500'}`}>
+                            {v.currentTemp}°C
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[9px]">{isAr ? 'دخول / خروج' : 'Entrées / Sorties'}</span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-slate-200">
+                            {v.inDepotVisits} / {v.outDepotExits}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[9px]">{isAr ? 'السرعة والوقود' : 'Vitesse / Carburant'}</span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-slate-200">
+                            {v.speedKmh} km/h • {v.fuelLevel}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Status Warning Banner */}
+                      {v.neverEnteredDepot && (
+                        <div className="mt-2 text-[9px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 p-1.5 rounded-lg">
+                          <AlertTriangle className="h-3 w-3" />
+                          <span>{isAr ? 'تنبيه: هذه المركبة لم تسجل دخولاً للمستودع حتى الآن' : 'Véhicule n\'a jamais franchi le géofencing du dépôt'}</span>
+                        </div>
+                      )}
+
+                      {!v.neverEnteredDepot && (v.daysAwayFromDepot || 0) >= 5 && (
+                        <div className="mt-2 text-[9px] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1 bg-purple-50 dark:bg-purple-950/30 p-1.5 rounded-lg">
+                          <Clock className="h-3 w-3" />
+                          <span>{isAr ? `غائب عن المستودع منذ ${v.daysAwayFromDepot} يوماً` : `Absent du dépôt depuis ${v.daysAwayFromDepot} jours`}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Right Column: Embedded Leaflet Geographic Map with Morocco Coordinates */}
+            <div className="lg:col-span-2 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner relative flex flex-col min-h-[480px]">
+              
+              {/* Map Floating HUD Info Header */}
+              <div className="absolute top-3 left-3 right-3 z-1000 flex items-center justify-between pointer-events-none">
+                <div className="bg-slate-950/85 backdrop-blur-md text-white px-3.5 py-1.5 rounded-2xl border border-slate-700/80 shadow-lg flex items-center gap-2 pointer-events-auto">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="text-xs font-black">
+                    {ZAHI_DEPOTS_METADATA[selectedDepotFilter]?.name}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono border-l border-slate-700 pl-2">
+                    Périmètre 4.5 km
+                  </span>
+                </div>
+
+                <div className="bg-slate-950/85 backdrop-blur-md text-slate-300 px-3 py-1.5 rounded-2xl border border-slate-700/80 shadow-lg text-[10px] flex items-center gap-3 pointer-events-auto">
+                  <span className="flex items-center gap-1 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    {isAr ? 'قريب' : 'Proche'}
+                  </span>
+                  <span className="flex items-center gap-1 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-blue-400" />
+                    {isAr ? 'في الطريق' : 'Transit'}
+                  </span>
+                  <span className="flex items-center gap-1 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                    {isAr ? 'عطل' : 'Panne'}
+                  </span>
+                </div>
+              </div>
+
+              {/* The Leaflet Map DOM Element Container */}
+              <div 
+                ref={mapContainerRef} 
+                className="w-full flex-1 min-h-[480px] bg-slate-900 z-0" 
+              />
+
+              {/* Map Floating Footer telemetry caption */}
+              <div className="p-3 bg-slate-900 text-slate-300 text-[10px] border-t border-slate-800 flex justify-between items-center flex-wrap gap-2">
+                <div className="flex items-center gap-2 font-mono">
+                  <span>📡 GPS Live Satellite</span>
+                  <span>•</span>
+                  <span>{ZAHI_DEPOTS_METADATA[selectedDepotFilter]?.address}</span>
+                </div>
+                <div className="font-bold text-sky-400">
+                  {isAr ? 'نظام زاهي الذكي لإدارة ومحاكاة الأسطول © Zahi Ice Glaces' : 'Système de Géolocalisation Intelligente © Zahi Glaces'}
+                </div>
+              </div>
+
             </div>
 
           </div>
+
         </div>
       )}
 
