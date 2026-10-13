@@ -96,19 +96,18 @@ export default function Header({
           transition={{ duration: 0.4 }}
           className="flex items-center gap-3 cursor-default"
         >
-          <motion.div 
-            whileHover={{ scale: 1.1, rotate: [0, -10, 10, -10, 0] }}
-            className="p-2 bg-gradient-to-br from-sky-500 to-indigo-600 text-white rounded-xl shadow-md shadow-sky-500/20 flex items-center justify-center"
-          >
-            <IceCream className="h-6 w-6" />
-          </motion.div>
+          <img 
+            src="/zahi-logo.png" 
+            alt="Zahi Glaces" 
+            className="h-10 sm:h-12 w-auto object-contain drop-shadow hover:scale-105 transition-transform" 
+          />
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600 bg-clip-text text-transparent">
+              <span className="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 dark:from-amber-400 dark:to-yellow-300 bg-clip-text text-transparent">
                 ZAHI
               </span>
-              <span className="text-xs px-2 py-0.5 bg-sky-100 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 rounded-full font-bold tracking-wide">
-                ICE LOGISTICS
+              <span className="text-[10px] sm:text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 rounded-full font-bold tracking-wide border border-amber-300/40">
+                GLACES
               </span>
             </div>
             <p className="text-xxs text-slate-400 dark:text-slate-500 font-bold -mt-0.5 uppercase tracking-wider">

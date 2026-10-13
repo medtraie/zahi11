@@ -3175,98 +3175,166 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
   return (
     <div id="refrigerator-module" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xl">
       
-      {/* Module Header Block with dynamic color palette */}
-      <div className="p-6 bg-gradient-to-r from-sky-700 via-sky-600 to-indigo-700 dark:from-sky-950 dark:to-indigo-950 text-white relative">
+      {/* Module Navigation Cards */}
+      <div className="p-4 sm:p-6 bg-gradient-to-r from-sky-700 via-sky-600 to-indigo-700 dark:from-sky-950 dark:to-indigo-950 text-white relative">
         <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
           <Snowflake className="h-40 w-40 animate-spin-slow text-white" />
         </div>
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="p-2 bg-white/10 rounded-xl">
-                <Snowflake className="h-6 w-6 text-sky-100" />
-              </span>
-              <h2 className="text-xl md:text-2xl font-black tracking-tight">{displayTitle}</h2>
-            </div>
-            <p className="text-xs text-sky-100/85">{displaySubtitle}</p>
+        {standalone ? (
+          <div className="flex items-center gap-3">
+            <span className="p-2 bg-white/10 rounded-xl">
+              <Snowflake className="h-6 w-6 text-sky-100" />
+            </span>
+            <h2 className="text-xl md:text-2xl font-black tracking-tight">{displayTitle}</h2>
           </div>
-          
-          {!standalone && (
-            <div className="flex flex-wrap gap-2">
-              <button 
-                onClick={() => { setActiveSubTab('inventory'); playBip(800, 0.05); }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeSubTab === 'inventory' 
-                    ? 'bg-white text-sky-900 shadow-md' 
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 relative z-10">
+            {/* Card 1: Parc Réfrigérateurs */}
+            <button
+              onClick={() => { setActiveSubTab('inventory'); playBip(800, 0.05); }}
+              className={`flex flex-col items-center justify-center text-center p-4 sm:p-5 rounded-2xl transition-all duration-200 transform hover:-translate-y-1 ${
+                activeSubTab === 'inventory'
+                  ? 'bg-white text-sky-900 shadow-xl ring-4 ring-white/50 font-black'
+                  : 'bg-white/15 hover:bg-white/25 text-white shadow-md border border-white/10'
+              }`}
+            >
+              <div className={`p-3 rounded-xl mb-2.5 transition-colors ${
+                activeSubTab === 'inventory' ? 'bg-sky-100 text-sky-700' : 'bg-white/20 text-white'
+              }`}>
+                <Snowflake className="h-6 w-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-extrabold leading-snug">
                 {lang === 'fr' ? 'Parc Réfrigérateurs' : 'ثلاجات العرض'}
-              </button>
-              <button 
-                onClick={() => { setActiveSubTab('maintenance'); playBip(800, 0.05); }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  activeSubTab === 'maintenance' 
-                    ? 'bg-amber-400 text-slate-950 shadow-md font-black' 
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                <Wrench className="h-3.5 w-3.5" />
-                <span>{lang === 'fr' ? 'Maintenance' : 'الصيانة'}</span>
-                <span className="px-1.5 py-0.2 bg-amber-950/20 text-slate-900 dark:text-amber-200 text-[10px] rounded-full font-mono font-bold">
-                  {maintenances.filter(m => m.status === 'En cours').length}
-                </span>
-              </button>
-              <button 
-                onClick={() => { setActiveSubTab('geoloc'); playBip(800, 0.05); }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  activeSubTab === 'geoloc' 
-                    ? 'bg-emerald-400 text-slate-950 shadow-md font-black' 
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                <MapPin className="h-3.5 w-3.5" />
-                <span>{lang === 'fr' ? 'Géolocalisation GPS' : 'التتبع الجغرافي'}</span>
-              </button>
-              <button 
-                onClick={() => { setActiveSubTab('movements'); playBip(800, 0.05); }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeSubTab === 'movements' 
-                    ? 'bg-white text-sky-900 shadow-md' 
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
+              </span>
+              <span className={`text-[10px] mt-1.5 px-2 py-0.5 rounded-full font-mono font-bold ${
+                activeSubTab === 'inventory' ? 'bg-sky-100 text-sky-800' : 'bg-black/20 text-sky-100'
+              }`}>
+                {refrigerators.length} {lang === 'fr' ? 'unités' : 'وحدة'}
+              </span>
+            </button>
+
+            {/* Card 2: Maintenance */}
+            <button
+              onClick={() => { setActiveSubTab('maintenance'); playBip(800, 0.05); }}
+              className={`flex flex-col items-center justify-center text-center p-4 sm:p-5 rounded-2xl transition-all duration-200 transform hover:-translate-y-1 ${
+                activeSubTab === 'maintenance'
+                  ? 'bg-amber-400 text-slate-950 shadow-xl ring-4 ring-amber-300/60 font-black'
+                  : 'bg-white/15 hover:bg-white/25 text-white shadow-md border border-white/10'
+              }`}
+            >
+              <div className={`p-3 rounded-xl mb-2.5 transition-colors ${
+                activeSubTab === 'maintenance' ? 'bg-amber-500/30 text-slate-950' : 'bg-white/20 text-white'
+              }`}>
+                <Wrench className="h-6 w-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-extrabold leading-snug">
+                {lang === 'fr' ? 'Maintenance' : 'الصيانة'}
+              </span>
+              <span className={`text-[10px] mt-1.5 px-2 py-0.5 rounded-full font-mono font-bold ${
+                activeSubTab === 'maintenance' ? 'bg-amber-950/20 text-slate-950' : 'bg-black/20 text-amber-200'
+              }`}>
+                {maintenances.filter(m => m.status === 'En cours').length} {lang === 'fr' ? 'en cours' : 'جارية'}
+              </span>
+            </button>
+
+            {/* Card 3: Géolocalisation GPS */}
+            <button
+              onClick={() => { setActiveSubTab('geoloc'); playBip(800, 0.05); }}
+              className={`flex flex-col items-center justify-center text-center p-4 sm:p-5 rounded-2xl transition-all duration-200 transform hover:-translate-y-1 ${
+                activeSubTab === 'geoloc'
+                  ? 'bg-emerald-400 text-slate-950 shadow-xl ring-4 ring-emerald-300/60 font-black'
+                  : 'bg-white/15 hover:bg-white/25 text-white shadow-md border border-white/10'
+              }`}
+            >
+              <div className={`p-3 rounded-xl mb-2.5 transition-colors ${
+                activeSubTab === 'geoloc' ? 'bg-emerald-500/30 text-slate-950' : 'bg-white/20 text-white'
+              }`}>
+                <MapPin className="h-6 w-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-extrabold leading-snug">
+                {lang === 'fr' ? 'Géolocalisation GPS' : 'التتبع الجغرافي'}
+              </span>
+              <span className={`text-[10px] mt-1.5 px-2 py-0.5 rounded-full font-mono font-bold ${
+                activeSubTab === 'geoloc' ? 'bg-emerald-950/20 text-slate-950' : 'bg-black/20 text-emerald-200'
+              }`}>
+                IoT Live
+              </span>
+            </button>
+
+            {/* Card 4: Mouvements de Stock */}
+            <button
+              onClick={() => { setActiveSubTab('movements'); playBip(800, 0.05); }}
+              className={`flex flex-col items-center justify-center text-center p-4 sm:p-5 rounded-2xl transition-all duration-200 transform hover:-translate-y-1 ${
+                activeSubTab === 'movements'
+                  ? 'bg-white text-sky-900 shadow-xl ring-4 ring-white/50 font-black'
+                  : 'bg-white/15 hover:bg-white/25 text-white shadow-md border border-white/10'
+              }`}
+            >
+              <div className={`p-3 rounded-xl mb-2.5 transition-colors ${
+                activeSubTab === 'movements' ? 'bg-sky-100 text-sky-700' : 'bg-white/20 text-white'
+              }`}>
+                <ArrowRightLeft className="h-6 w-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-extrabold leading-snug">
                 {lang === 'fr' ? 'Mouvements de Stock' : 'حركة المخزون'}
-              </button>
-              <button 
-                onClick={() => { setActiveSubTab('bons'); playBip(800, 0.05); }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  activeSubTab === 'bons' 
-                    ? 'bg-white text-sky-900 shadow-md' 
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                <FileText className="h-3.5 w-3.5" />
-                {lang === 'fr' ? "Formulaire des Bons" : "تعبئة الأذونات والسنادت"}
-              </button>
-              <button 
-                onClick={() => { setActiveSubTab('historique'); playBip(800, 0.05); }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  activeSubTab === 'historique' 
-                    ? 'bg-white text-sky-900 shadow-md' 
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                <History className="h-3.5 w-3.5 text-amber-300" />
-                <span>{lang === 'fr' ? 'Historique des Bons' : 'سجل الأذونات'}</span>
-                <span className="px-1.5 py-0.2 bg-amber-500/30 text-amber-200 text-[10px] rounded-full font-mono">
-                  {savedBons.length}
-                </span>
-              </button>
-            </div>
-          )}
-        </div>
+              </span>
+              <span className={`text-[10px] mt-1.5 px-2 py-0.5 rounded-full font-mono font-bold ${
+                activeSubTab === 'movements' ? 'bg-sky-100 text-sky-800' : 'bg-black/20 text-sky-100'
+              }`}>
+                {stockMovements.length} {lang === 'fr' ? 'mouvements' : 'حركات'}
+              </span>
+            </button>
+
+            {/* Card 5: Formulaire des Bons */}
+            <button
+              onClick={() => { setActiveSubTab('bons'); playBip(800, 0.05); }}
+              className={`flex flex-col items-center justify-center text-center p-4 sm:p-5 rounded-2xl transition-all duration-200 transform hover:-translate-y-1 ${
+                activeSubTab === 'bons'
+                  ? 'bg-white text-sky-900 shadow-xl ring-4 ring-white/50 font-black'
+                  : 'bg-white/15 hover:bg-white/25 text-white shadow-md border border-white/10'
+              }`}
+            >
+              <div className={`p-3 rounded-xl mb-2.5 transition-colors ${
+                activeSubTab === 'bons' ? 'bg-sky-100 text-sky-700' : 'bg-white/20 text-white'
+              }`}>
+                <FileText className="h-6 w-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-extrabold leading-snug">
+                {lang === 'fr' ? 'Formulaire des Bons' : 'تعبئة الأذونات'}
+              </span>
+              <span className={`text-[10px] mt-1.5 px-2 py-0.5 rounded-full font-mono font-bold ${
+                activeSubTab === 'bons' ? 'bg-sky-100 text-sky-800' : 'bg-black/20 text-sky-100'
+              }`}>
+                Création
+              </span>
+            </button>
+
+            {/* Card 6: Historique des Bons */}
+            <button
+              onClick={() => { setActiveSubTab('historique'); playBip(800, 0.05); }}
+              className={`flex flex-col items-center justify-center text-center p-4 sm:p-5 rounded-2xl transition-all duration-200 transform hover:-translate-y-1 ${
+                activeSubTab === 'historique'
+                  ? 'bg-amber-400 text-slate-950 shadow-xl ring-4 ring-amber-300/60 font-black'
+                  : 'bg-white/15 hover:bg-white/25 text-white shadow-md border border-white/10'
+              }`}
+            >
+              <div className={`p-3 rounded-xl mb-2.5 transition-colors ${
+                activeSubTab === 'historique' ? 'bg-amber-500/30 text-slate-950' : 'bg-white/20 text-white'
+              }`}>
+                <History className="h-6 w-6" />
+              </div>
+              <span className="text-xs sm:text-sm font-extrabold leading-snug">
+                {lang === 'fr' ? 'Historique des Bons' : 'سجل الأذونات'}
+              </span>
+              <span className={`text-[10px] mt-1.5 px-2 py-0.5 rounded-full font-mono font-bold ${
+                activeSubTab === 'historique' ? 'bg-amber-950/20 text-slate-950' : 'bg-black/20 text-amber-200'
+              }`}>
+                {savedBons.length} {lang === 'fr' ? 'bons' : 'إذن'}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* SUB-TAB 1: INVENTORY & DETAILED CONTROLS */}
