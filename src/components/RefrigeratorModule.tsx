@@ -565,6 +565,61 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
               }
             }
           }
+
+          // Ensure Tanger has stock fridges available for Bon de Sortie testing & operation
+          const hasTangerStock = cleaned.some((f: Refrigerator) => (f.depot || '').toLowerCase().includes('tanger') && f.status === 'stock');
+          if (!hasTangerStock) {
+            cleaned.push(
+              {
+                id: 'REF-ZH-7506-STK1',
+                serialNumber: 'ZAHI-CF-750610',
+                type: 'AP',
+                status: 'stock',
+                depot: 'Tanger',
+                temperature: -19.5,
+                targetTemperature: -22.0,
+                humidity: 55,
+                compressorStatus: 'running',
+                lastServiceDate: '2026-06-20',
+                installationDate: '2025-08-10',
+                fillLevel: 0,
+                powerConsumption: 120,
+                gps: { lat: 35.7595, lng: -5.8340, city: 'Tanger', address: 'Dépôt Régional Tanger, Zone Industrielle Gzenaya' }
+              },
+              {
+                id: 'REF-ZH-7506-STK2',
+                serialNumber: 'ZAHI-VD-750620',
+                type: 'AG',
+                status: 'stock',
+                depot: 'Tanger',
+                temperature: 3.9,
+                targetTemperature: 4.0,
+                humidity: 50,
+                compressorStatus: 'running',
+                lastServiceDate: '2026-06-25',
+                installationDate: '2025-08-15',
+                fillLevel: 0,
+                powerConsumption: 210,
+                gps: { lat: 35.7595, lng: -5.8340, city: 'Tanger', address: 'Dépôt Régional Tanger, Zone Industrielle Gzenaya' }
+              },
+              {
+                id: 'REF-ZH-7506-STK3',
+                serialNumber: 'ZAHI-AS-750630',
+                type: 'AS',
+                status: 'stock',
+                depot: 'Tanger',
+                temperature: -18.0,
+                targetTemperature: -20.0,
+                humidity: 52,
+                compressorStatus: 'running',
+                lastServiceDate: '2026-07-01',
+                installationDate: '2025-09-01',
+                fillLevel: 0,
+                powerConsumption: 135,
+                gps: { lat: 35.7595, lng: -5.8340, city: 'Tanger', address: 'Dépôt Régional Tanger, Zone Industrielle Gzenaya' }
+              }
+            );
+          }
           return cleaned;
         }
       }
@@ -829,6 +884,54 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
         lastDeliveryDate: '2026-07-20',
         estimatedRevenueDH: 44000,
         gps: { lat: 35.7700, lng: -5.7850, city: 'Tanger', address: 'Baie de Tanger, Malabata' }
+      },
+      {
+        id: 'REF-ZH-7507-STK1',
+        serialNumber: 'ZAHI-CF-750610',
+        type: 'AP',
+        status: 'stock',
+        depot: 'Tanger',
+        temperature: -19.5,
+        targetTemperature: -22.0,
+        humidity: 55,
+        compressorStatus: 'running',
+        lastServiceDate: '2026-06-20',
+        installationDate: '2025-08-10',
+        fillLevel: 0,
+        powerConsumption: 120,
+        gps: { lat: 35.7595, lng: -5.8340, city: 'Tanger', address: 'Dépôt Régional Tanger, Zone Industrielle Gzenaya' }
+      },
+      {
+        id: 'REF-ZH-7507-STK2',
+        serialNumber: 'ZAHI-VD-750620',
+        type: 'AG',
+        status: 'stock',
+        depot: 'Tanger',
+        temperature: 3.9,
+        targetTemperature: 4.0,
+        humidity: 50,
+        compressorStatus: 'running',
+        lastServiceDate: '2026-06-25',
+        installationDate: '2025-08-15',
+        fillLevel: 0,
+        powerConsumption: 210,
+        gps: { lat: 35.7595, lng: -5.8340, city: 'Tanger', address: 'Dépôt Régional Tanger, Zone Industrielle Gzenaya' }
+      },
+      {
+        id: 'REF-ZH-7507-STK3',
+        serialNumber: 'ZAHI-AS-750630',
+        type: 'AS',
+        status: 'stock',
+        depot: 'Tanger',
+        temperature: -18.0,
+        targetTemperature: -20.0,
+        humidity: 52,
+        compressorStatus: 'running',
+        lastServiceDate: '2026-07-01',
+        installationDate: '2025-09-01',
+        fillLevel: 0,
+        powerConsumption: 135,
+        gps: { lat: 35.7595, lng: -5.8340, city: 'Tanger', address: 'Dépôt Régional Tanger, Zone Industrielle Gzenaya' }
       },
       {
         id: 'REF-ZH-7508',
@@ -1187,50 +1290,21 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
   const [bonNo, setBonNo] = useState<string>(() => {
     return String(Math.floor(27000 + Math.random() * 70000)).padStart(8, '0');
   });
-  const [bonApRows, setBonApRows] = useState<string[]>(() => {
-    const seen = new Set<string>();
-    const casaAp = fridges.filter(f => f.status === 'stock' && (f.depot || '').toLowerCase().includes('casablanca') && (f.type === 'chest' || f.type === 'AP'));
-    const rows = Array(10).fill('');
-    let idx = 0;
-    casaAp.forEach(f => {
-      const s = (f.serialNumber || '').trim().toUpperCase();
-      if (s && !seen.has(s) && idx < 10) {
-        seen.add(s);
-        rows[idx++] = s;
-      }
-    });
-    return rows;
-  });
-  const [bonAgRows, setBonAgRows] = useState<string[]>(() => {
-    const seen = new Set<string>();
-    const casaAg = fridges.filter(f => f.status === 'stock' && (f.depot || '').toLowerCase().includes('casablanca') && (f.type === 'upright' || f.type === 'AG'));
-    const rows = Array(10).fill('');
-    let idx = 0;
-    casaAg.forEach(f => {
-      const s = (f.serialNumber || '').trim().toUpperCase();
-      if (s && !seen.has(s) && idx < 10) {
-        seen.add(s);
-        rows[idx++] = s;
-      }
-    });
-    return rows;
-  });
-  const [bonAsRows, setBonAsRows] = useState<string[]>(() => {
-    const seen = new Set<string>();
-    const casaAs = fridges.filter(f => f.status === 'stock' && (f.depot || '').toLowerCase().includes('casablanca') && f.type === 'AS');
-    const rows = Array(10).fill('');
-    let idx = 0;
-    casaAs.forEach(f => {
-      const s = (f.serialNumber || '').trim().toUpperCase();
-      if (s && !seen.has(s) && idx < 10) {
-        seen.add(s);
-        rows[idx++] = s;
-      }
-    });
-    return rows;
-  });
+  // Helper to accurately match depot names (ignoring "Dépôt " prefix and case)
+  const isFridgeInDepot = (f: { depot?: string } | undefined, targetDepot: string) => {
+    if (!f || !f.depot) return false;
+    const cleanF = f.depot.replace(/^dépôt\s+/i, '').trim().toLowerCase();
+    const cleanT = (targetDepot || '').replace(/^dépôt\s+/i, '').trim().toLowerCase();
+    return cleanF === cleanT;
+  };
 
-  // Prevent duplicate serial numbers across the entire table
+  const [bonApRows, setBonApRows] = useState<string[]>(() => Array(10).fill(''));
+  const [bonAgRows, setBonAgRows] = useState<string[]>(() => Array(10).fill(''));
+  const [bonAsRows, setBonAsRows] = useState<string[]>(() => Array(10).fill(''));
+
+  const [bonDepot, setBonDepot] = useState('Casablanca');
+
+  // Prevent duplicate serial numbers across the entire table & validate depot
   const handleUpdateBonRow = (category: 'AP' | 'AG' | 'AS', index: number, rawVal: string) => {
     const val = rawVal.trim().toUpperCase();
     if (val) {
@@ -1250,6 +1324,21 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
         });
         return;
       }
+
+      // In Bon de Sortie, ensure fridge belongs to the selected depot only
+      if ((bonType === 'sortie' || bonType === 'depot_regional') && val) {
+        const existingFridge = fridges.find(f => (f.serialNumber || '').trim().toUpperCase() === val);
+        if (existingFridge && !isFridgeInDepot(existingFridge, bonDepot)) {
+          playBip(400, 0.25);
+          setBonToast({
+            message: lang === 'fr'
+              ? `⚠️ Le congélateur N° "${val}" appartient au Dépôt ${existingFridge.depot || 'Autre'}, pas au Dépôt ${bonDepot} !`
+              : `⚠️ الثلاجة رقم "${val}" تابعة لمستودع ${existingFridge.depot || 'آخر'} وليست في مستودع ${bonDepot}!`,
+            type: 'error'
+          });
+          return;
+        }
+      }
     }
 
     if (category === 'AP') {
@@ -1266,7 +1355,6 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
       setBonAsRows(updated);
     }
   };
-  const [bonDepot, setBonDepot] = useState('Casablanca');
 
   // Fields specifically for Bon de Prise en Charge, Décharge & Contrat de Dépôt (matching photo form)
   const [bonHeure, setBonHeure] = useState<string>(() => new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
@@ -6555,27 +6643,11 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                   onChange={(e) => {
                     const newType = e.target.value as any;
                     setBonType(newType);
+                    // Always start with empty rows on bon type switch
+                    setBonApRows(Array(10).fill(''));
+                    setBonAgRows(Array(10).fill(''));
+                    setBonAsRows(Array(10).fill(''));
                     playBip(800, 0.05);
-
-                    if (newType === 'entry') {
-                      // Automatically preload Casablanca stock fridges
-                      const casaFridges = fridges.filter(f => f.status === 'stock' && (f.depot || '').toLowerCase().includes('casablanca'));
-                      const casaAp = casaFridges.filter(f => f.type === 'chest' || f.type === 'AP');
-                      const casaAg = casaFridges.filter(f => f.type === 'upright' || f.type === 'AG');
-                      const casaAs = casaFridges.filter(f => f.type === 'AS');
-
-                      const newAp = Array(10).fill('');
-                      const newAg = Array(10).fill('');
-                      const newAs = Array(10).fill('');
-
-                      casaAp.slice(0, 10).forEach((f, idx) => { newAp[idx] = f.serialNumber; });
-                      casaAg.slice(0, 10).forEach((f, idx) => { newAg[idx] = f.serialNumber; });
-                      casaAs.slice(0, 10).forEach((f, idx) => { newAs[idx] = f.serialNumber; });
-
-                      setBonApRows(newAp);
-                      setBonAgRows(newAg);
-                      setBonAsRows(newAs);
-                    }
                   }}
                   className={`px-4 py-2.5 rounded-xl text-xs font-black border focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer shadow-sm transition-all ${
                     bonType === 'entry' 
@@ -6627,6 +6699,10 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                   value={bonDepot}
                   onChange={(e) => {
                     setBonDepot(e.target.value);
+                    // Reset rows when depot changes so only fridges of selected depot appear
+                    setBonApRows(Array(10).fill(''));
+                    setBonAgRows(Array(10).fill(''));
+                    setBonAsRows(Array(10).fill(''));
                     playBip(750, 0.04);
                   }}
                   className="bg-white dark:bg-slate-900 text-xs font-bold text-indigo-700 dark:text-indigo-300 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
@@ -7505,7 +7581,12 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       ) : (
                         <select
                           value={bonDepot}
-                          onChange={(e) => setBonDepot(e.target.value)}
+                          onChange={(e) => {
+                            setBonDepot(e.target.value);
+                            setBonApRows(Array(10).fill(''));
+                            setBonAgRows(Array(10).fill(''));
+                            setBonAsRows(Array(10).fill(''));
+                          }}
                           className="flex-1 bg-white text-slate-900 border-b-2 border-dashed border-slate-400 focus:border-slate-900 focus:bg-amber-50/40 px-2 py-1 focus:outline-none transition-all font-bold cursor-pointer"
                         >
                           {regionalDepots.map((dep) => (
@@ -7589,24 +7670,26 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                     <input type="submit" id="hidden-bon-submit" className="hidden" />
                   </form>
 
-                  {/* QUICK LOAD FROM CASABLANCA STOCK OR HISTORIQUE DES BONS FOR BON D'ENTRÉE */}
-                  {bonType === 'entry' && (() => {
-                    const casaFridges = fridges.filter(f => f.status === 'stock' && (f.depot || '').toLowerCase().includes('casablanca'));
+                  {/* QUICK LOAD FROM STOCK OR HISTORIQUE DES BONS FOR BON D'ENTRÉE / BON DE SORTIE */}
+                  {(bonType === 'entry' || bonType === 'sortie' || bonType === 'depot_regional') && (() => {
+                    const isSortie = bonType === 'sortie' || bonType === 'depot_regional';
+                    const targetDepot = isSortie ? bonDepot : 'Casablanca';
+                    const availableStockFridges = fridges.filter(f => f.status === 'stock' && isFridgeInDepot(f, targetDepot));
                     
-                    // Deduplicate Casablanca fridges strictly by serial number so no fridge can appear twice
-                    const seenCasaSerials = new Set<string>();
-                    const uniqueCasaFridges = casaFridges.filter(f => {
+                    // Deduplicate strictly by serial number so no fridge can appear twice
+                    const seenSerials = new Set<string>();
+                    const uniqueStockFridges = availableStockFridges.filter(f => {
                       const norm = (f.serialNumber || '').trim().toUpperCase();
-                      if (!norm || seenCasaSerials.has(norm)) return false;
-                      seenCasaSerials.add(norm);
+                      if (!norm || seenSerials.has(norm)) return false;
+                      seenSerials.add(norm);
                       return true;
                     });
 
-                    const casaAp = uniqueCasaFridges.filter(f => f.type === 'chest' || f.type === 'AP');
-                    const casaAg = uniqueCasaFridges.filter(f => f.type === 'upright' || f.type === 'AG');
-                    const casaAs = uniqueCasaFridges.filter(f => f.type === 'AS');
+                    const depotAp = uniqueStockFridges.filter(f => f.type === 'chest' || f.type === 'AP');
+                    const depotAg = uniqueStockFridges.filter(f => f.type === 'upright' || f.type === 'AG');
+                    const depotAs = uniqueStockFridges.filter(f => f.type === 'AS');
 
-                    const handleLoadCasaFridges = () => {
+                    const handleLoadDepotFridges = () => {
                       const newAp = Array(10).fill('');
                       const newAg = Array(10).fill('');
                       const newAs = Array(10).fill('');
@@ -7614,7 +7697,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       const loadedSerials = new Set<string>();
 
                       let apCount = 0;
-                      casaAp.forEach(f => {
+                      depotAp.forEach(f => {
                         const s = f.serialNumber.trim().toUpperCase();
                         if (s && !loadedSerials.has(s) && apCount < 10) {
                           newAp[apCount++] = s;
@@ -7623,7 +7706,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       });
 
                       let agCount = 0;
-                      casaAg.forEach(f => {
+                      depotAg.forEach(f => {
                         const s = f.serialNumber.trim().toUpperCase();
                         if (s && !loadedSerials.has(s) && agCount < 10) {
                           newAg[agCount++] = s;
@@ -7632,7 +7715,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       });
 
                       let asCount = 0;
-                      casaAs.forEach(f => {
+                      depotAs.forEach(f => {
                         const s = f.serialNumber.trim().toUpperCase();
                         if (s && !loadedSerials.has(s) && asCount < 10) {
                           newAs[asCount++] = s;
@@ -7646,8 +7729,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       playBip(1100, 0.08);
                       setBonToast({
                         message: lang === 'fr' 
-                          ? `${loadedSerials.size} congélateurs uniques chargés dans le tableau (AP: ${apCount}, AG: ${agCount}, AS: ${asCount}) sans doublons !`
-                          : `تم تحميل ${loadedSerials.size} ثلاجة فريدة في الجدول بدون أي تكرار (AP: ${apCount}, AG: ${agCount}, AS: ${asCount})!`,
+                          ? `${loadedSerials.size} congélateurs uniques du Dépôt ${targetDepot} chargés dans le tableau (AP: ${apCount}, AG: ${agCount}, AS: ${asCount}) sans doublons !`
+                          : `تم تحميل ${loadedSerials.size} ثلاجة من مستودع ${targetDepot} في الجدول بدون تكرار (AP: ${apCount}, AG: ${agCount}, AS: ${asCount})!`,
                         type: 'success'
                       });
                     };
@@ -7657,7 +7740,6 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       const bonToLoad = savedBons.find(b => b.id === selectedBonId);
                       if (bonToLoad) {
                         loadSavedBon(bonToLoad);
-                        setBonType('entry'); // maintain bonType as entry
                         
                         // Enforce deduplication on rows loaded from history
                         const seen = new Set<string>();
@@ -7697,10 +7779,12 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                             <Warehouse className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
                             <div className="text-xs">
                               <span className="font-extrabold text-blue-950 dark:text-white block">
-                                {lang === 'fr' ? 'Stock disponible à Dépôt Casablanca :' : 'المخزون المتوفر بمستودع الدار البيضاء :'}
+                                {isSortie
+                                  ? (lang === 'fr' ? `Stock disponible à Dépôt ${targetDepot} :` : `المخزون المتوفر بمستودع ${targetDepot} :`)
+                                  : (lang === 'fr' ? 'Stock disponible à Dépôt Casablanca :' : 'المخزون المتوفر بمستودع الدار البيضاء :')}
                               </span>
                               <span className="text-[11px] text-blue-700 dark:text-blue-300 font-semibold">
-                                AP: <b>{casaAp.length}</b> | AG: <b>{casaAg.length}</b> | AS: <b>{casaAs.length}</b> (Total: <b>{uniqueCasaFridges.length}</b>)
+                                AP: <b>{depotAp.length}</b> | AG: <b>{depotAg.length}</b> | AS: <b>{depotAs.length}</b> (Total: <b>{uniqueStockFridges.length}</b>)
                               </span>
                             </div>
                           </div>
@@ -7708,12 +7792,14 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                           <div className="flex flex-wrap items-center gap-2">
                             <button
                               type="button"
-                              disabled={uniqueCasaFridges.length === 0}
-                              onClick={handleLoadCasaFridges}
-                              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg transition-all shadow-sm flex items-center gap-1.5"
+                              disabled={uniqueStockFridges.length === 0}
+                              onClick={handleLoadDepotFridges}
+                              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg transition-all shadow-sm flex items-center gap-1.5"
                             >
                               <Download className="h-3.5 w-3.5" />
-                              {lang === 'fr' ? 'Charger les congélateurs de Casablanca' : 'تحميل ثلاجات كازابلانكا في الجدول'}
+                              {isSortie
+                                ? (lang === 'fr' ? `Charger les congélateurs de Dépôt ${targetDepot}` : `تحميل ثلاجات مستودع ${targetDepot} في الجدول`)
+                                : (lang === 'fr' ? 'Charger les congélateurs de Casablanca' : 'تحميل ثلاجات كازابلانكا في الجدول')}
                             </button>
                             {(bonApRows.some(s => s) || bonAgRows.some(s => s) || bonAsRows.some(s => s)) && (
                               <button
@@ -7750,12 +7836,12 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                             >
                               <option value="">{lang === 'fr' ? '-- Sélectionner un Bon de l\'Historique --' : '-- اختر إذن من السجل للتحميل --'}</option>
                               {savedBons
-                                .filter(b => (b.apRows && b.apRows.some((s: string) => s)) || (b.agRows && b.agRows.some((s: string) => s)) || b.type === 'livraison' || b.type === 'entry')
+                                .filter(b => (b.apRows && b.apRows.some((s: string) => s)) || (b.agRows && b.agRows.some((s: string) => s)) || b.type === 'livraison' || b.type === 'entry' || b.type === 'sortie')
                                 .map(b => {
                                   const apC = (b.apRows || []).filter((s: string) => s).length;
                                   const agC = (b.agRows || []).filter((s: string) => s).length;
                                   const asC = (b.asRows || []).filter((s: string) => s).length;
-                                  const typeName = b.type === 'livraison' ? 'Livraison' : b.type === 'entry' ? 'Entrée' : b.type;
+                                  const typeName = b.type === 'livraison' ? 'Livraison' : b.type === 'entry' ? 'Entrée' : b.type === 'sortie' ? 'Sortie' : b.type;
                                   return (
                                     <option key={b.id} value={b.id}>
                                       {typeName} N° {b.bonNo} ({b.depot || 'Casablanca'}) - {apC + agC + asC} fridges ({b.date})
@@ -7778,7 +7864,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                     );
                   })()}
 
-                  {/* HTML5 DATALISTS - FILTERING OUT ALREADY USED SERIALS TO PREVENT DUPLICATES */}
+                  {/* HTML5 DATALISTS - FILTERING OUT ALREADY USED SERIALS AND RESTRICTING TO SELECTED DEPOT */}
                   {(() => {
                     const usedSerialsSet = new Set([
                       ...bonApRows.map(s => s.trim().toUpperCase()),
@@ -7786,30 +7872,41 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       ...bonAsRows.map(s => s.trim().toUpperCase())
                     ].filter(Boolean));
 
+                    const filterFridgeByDepot = (f: Refrigerator) => {
+                      if (f.status !== 'stock') return false;
+                      if (bonType === 'sortie' || bonType === 'depot_regional') {
+                        return isFridgeInDepot(f, bonDepot);
+                      }
+                      if (bonType === 'entry') {
+                        return isFridgeInDepot(f, 'Casablanca');
+                      }
+                      return true;
+                    };
+
                     return (
                       <>
                         <datalist id="bon-casa-ap-list">
                           {fridges
-                            .filter(f => f.status === 'stock' && (f.type === 'chest' || f.type === 'AP') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
+                            .filter(f => (f.type === 'chest' || f.type === 'AP') && filterFridgeByDepot(f))
                             .filter(f => !usedSerialsSet.has((f.serialNumber || '').trim().toUpperCase()))
                             .map(f => (
-                              <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
+                              <option key={f.id} value={f.serialNumber}>{f.serialNumber} - (Dépôt {f.depot || 'Casablanca'})</option>
                             ))}
                         </datalist>
                         <datalist id="bon-casa-ag-list">
                           {fridges
-                            .filter(f => f.status === 'stock' && (f.type === 'upright' || f.type === 'AG') && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
+                            .filter(f => (f.type === 'upright' || f.type === 'AG') && filterFridgeByDepot(f))
                             .filter(f => !usedSerialsSet.has((f.serialNumber || '').trim().toUpperCase()))
                             .map(f => (
-                              <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
+                              <option key={f.id} value={f.serialNumber}>{f.serialNumber} - (Dépôt {f.depot || 'Casablanca'})</option>
                             ))}
                         </datalist>
                         <datalist id="bon-casa-as-list">
                           {fridges
-                            .filter(f => f.status === 'stock' && f.type === 'AS' && (bonType !== 'entry' || (f.depot || '').toLowerCase().includes('casablanca')))
+                            .filter(f => f.type === 'AS' && filterFridgeByDepot(f))
                             .filter(f => !usedSerialsSet.has((f.serialNumber || '').trim().toUpperCase()))
                             .map(f => (
-                              <option key={f.id} value={f.serialNumber}>{f.serialNumber} - ({f.depot || 'Casablanca'})</option>
+                              <option key={f.id} value={f.serialNumber}>{f.serialNumber} - (Dépôt {f.depot || 'Casablanca'})</option>
                             ))}
                         </datalist>
                       </>
@@ -7865,7 +7962,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     >
                                       ×
                                     </button>
-                                  ) : bonType !== 'entry' ? (
+                                  ) : bonType === 'livraison' ? (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -7902,7 +7999,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     >
                                       ×
                                     </button>
-                                  ) : bonType !== 'entry' ? (
+                                  ) : bonType === 'livraison' ? (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -7939,7 +8036,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     >
                                       ×
                                     </button>
-                                  ) : bonType !== 'entry' ? (
+                                  ) : bonType === 'livraison' ? (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -7976,7 +8073,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     >
                                       ×
                                     </button>
-                                  ) : bonType !== 'entry' ? (
+                                  ) : bonType === 'livraison' ? (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -8013,7 +8110,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     >
                                       ×
                                     </button>
-                                  ) : bonType !== 'entry' ? (
+                                  ) : bonType === 'livraison' ? (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -8050,7 +8147,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                     >
                                       ×
                                     </button>
-                                  ) : bonType !== 'entry' ? (
+                                  ) : bonType === 'livraison' ? (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -8075,31 +8172,33 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                   </div>
 
                   {/* RECAP TABLE */}
-                  <div className="mt-5 border-2 border-slate-900 rounded-lg overflow-hidden bg-white max-w-2xl">
+                  <div className="mt-5 border-2 border-slate-900 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-900 max-w-2xl">
                     <table className="w-full text-center text-xs border-collapse">
                       <thead>
-                        <tr className="bg-slate-100 text-slate-900 font-black uppercase border-b-2 border-slate-900">
-                          <th className="py-2 px-3 border-r border-slate-900 text-left w-1/5">Recap</th>
-                          <th className="py-2 px-3 border-r border-slate-900 w-1/5">AP</th>
-                          <th className="py-2 px-3 border-r border-slate-900 w-1/5">AG</th>
-                          <th className="py-2 px-3 border-r border-slate-900 w-1/5">AS</th>
+                        <tr className="bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black uppercase border-b-2 border-slate-900 dark:border-slate-700">
+                          <th className="py-2 px-3 border-r border-slate-900 dark:border-slate-700 text-left w-1/5">Recap</th>
+                          <th className="py-2 px-3 border-r border-slate-900 dark:border-slate-700 w-1/5">AP</th>
+                          <th className="py-2 px-3 border-r border-slate-900 dark:border-slate-700 w-1/5">AG</th>
+                          <th className="py-2 px-3 border-r border-slate-900 dark:border-slate-700 w-1/5">AS</th>
                           <th className="py-2 px-3 w-1/5">Total Global</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr className="font-bold text-slate-900">
-                          <td className="py-2.5 px-3 border-r border-slate-900 text-left bg-slate-50 font-black">Total</td>
-                          <td className="py-2.5 px-3 border-r border-slate-900 font-mono text-sm">
+                        <tr className="font-bold text-slate-900 dark:text-white">
+                          <td className="py-2.5 px-3 border-r border-slate-900 dark:border-slate-700 text-left bg-slate-50 dark:bg-slate-800 font-black text-slate-900 dark:text-white">Total</td>
+                          <td className="py-2.5 px-3 border-r border-slate-900 dark:border-slate-700 font-mono text-sm text-white print:text-black font-black">
                             {bonApRows.filter(s => s.trim() !== '').length}
                           </td>
-                          <td className="py-2.5 px-3 border-r border-slate-900 font-mono text-sm">
+                          <td className="py-2.5 px-3 border-r border-slate-900 dark:border-slate-700 font-mono text-sm text-white print:text-black font-black">
                             {bonAgRows.filter(s => s.trim() !== '').length}
                           </td>
-                          <td className="py-2.5 px-3 border-r border-slate-900 font-mono text-sm">
+                          <td className="py-2.5 px-3 border-r border-slate-900 dark:border-slate-700 font-mono text-sm text-white print:text-black font-black">
                             {bonAsRows.filter(s => s.trim() !== '').length}
                           </td>
-                          <td className="py-2.5 px-3 font-mono text-base font-black text-slate-950">
-                            {bonApRows.filter(s => s.trim() !== '').length + bonAgRows.filter(s => s.trim() !== '').length + bonAsRows.filter(s => s.trim() !== '').length}
+                          <td className="py-2.5 px-3 font-mono text-base font-black text-white print:text-black bg-slate-900/60 dark:bg-slate-800/80">
+                            <span className="text-white print:text-black font-black">
+                              {bonApRows.filter(s => s.trim() !== '').length + bonAgRows.filter(s => s.trim() !== '').length + bonAsRows.filter(s => s.trim() !== '').length}
+                            </span>
                           </td>
                         </tr>
                       </tbody>
