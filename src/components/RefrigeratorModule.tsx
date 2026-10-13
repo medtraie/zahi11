@@ -6643,6 +6643,9 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                   onChange={(e) => {
                     const newType = e.target.value as any;
                     setBonType(newType);
+                    if (newType === 'livraison') {
+                      setBonDepot('Casablanca');
+                    }
                     // Always start with empty rows on bon type switch
                     setBonApRows(Array(10).fill(''));
                     setBonAgRows(Array(10).fill(''));
@@ -6689,31 +6692,33 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                 </select>
               </div>
 
-              {/* Dépôts Régionaux Selection Dropdown */}
-              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
-                <MapPin className="h-4 w-4 text-indigo-500 shrink-0" />
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 shrink-0">
-                  {lang === 'fr' ? 'Dépôt :' : 'المستودع :'}
-                </span>
-                <select
-                  value={bonDepot}
-                  onChange={(e) => {
-                    setBonDepot(e.target.value);
-                    // Reset rows when depot changes so only fridges of selected depot appear
-                    setBonApRows(Array(10).fill(''));
-                    setBonAgRows(Array(10).fill(''));
-                    setBonAsRows(Array(10).fill(''));
-                    playBip(750, 0.04);
-                  }}
-                  className="bg-white dark:bg-slate-900 text-xs font-bold text-indigo-700 dark:text-indigo-300 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                >
-                  {regionalDepots.map((dep) => (
-                    <option key={dep} value={dep}>
-                      {lang === 'fr' ? `Dépôt ${dep}` : `مستودع ${dep}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Dépôts Régionaux Selection Dropdown - Hidden for Bon de Livraison which is always Casablanca */}
+              {bonType !== 'livraison' && (
+                <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+                  <MapPin className="h-4 w-4 text-indigo-500 shrink-0" />
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200 shrink-0">
+                    {lang === 'fr' ? 'Dépôt :' : 'المستودع :'}
+                  </span>
+                  <select
+                    value={bonDepot}
+                    onChange={(e) => {
+                      setBonDepot(e.target.value);
+                      // Reset rows when depot changes so only fridges of selected depot appear
+                      setBonApRows(Array(10).fill(''));
+                      setBonAgRows(Array(10).fill(''));
+                      setBonAsRows(Array(10).fill(''));
+                      playBip(750, 0.04);
+                    }}
+                    className="bg-white dark:bg-slate-900 text-xs font-bold text-indigo-700 dark:text-indigo-300 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  >
+                    {regionalDepots.map((dep) => (
+                      <option key={dep} value={dep}>
+                        {lang === 'fr' ? `Dépôt ${dep}` : `مستودع ${dep}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0 self-end lg:self-auto">
@@ -7873,6 +7878,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                     ].filter(Boolean));
 
                     const filterFridgeByDepot = (f: Refrigerator) => {
+                      if (bonType === 'livraison') return false; // In Bon de Livraison, fridges are new; disable loading from stock
                       if (f.status !== 'stock') return false;
                       if (bonType === 'sortie' || bonType === 'depot_regional') {
                         return isFridgeInDepot(f, bonDepot);
@@ -7947,7 +7953,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                 <div className="relative flex items-center">
                                   <input
                                     type="text"
-                                    list="bon-casa-ap-list"
+                                    list={bonType !== 'livraison' ? "bon-casa-ap-list" : undefined}
                                     placeholder="............"
                                     value={bonApRows[apIdx1] || ''}
                                     onChange={(e) => handleUpdateBonRow('AP', apIdx1, e.target.value)}
@@ -7984,7 +7990,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                 <div className="relative flex items-center">
                                   <input
                                     type="text"
-                                    list="bon-casa-ap-list"
+                                    list={bonType !== 'livraison' ? "bon-casa-ap-list" : undefined}
                                     placeholder="............"
                                     value={bonApRows[apIdx2] || ''}
                                     onChange={(e) => handleUpdateBonRow('AP', apIdx2, e.target.value)}
@@ -8021,7 +8027,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                 <div className="relative flex items-center">
                                   <input
                                     type="text"
-                                    list="bon-casa-ag-list"
+                                    list={bonType !== 'livraison' ? "bon-casa-ag-list" : undefined}
                                     placeholder="............"
                                     value={bonAgRows[agIdx1] || ''}
                                     onChange={(e) => handleUpdateBonRow('AG', agIdx1, e.target.value)}
@@ -8058,7 +8064,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                 <div className="relative flex items-center">
                                   <input
                                     type="text"
-                                    list="bon-casa-ag-list"
+                                    list={bonType !== 'livraison' ? "bon-casa-ag-list" : undefined}
                                     placeholder="............"
                                     value={bonAgRows[agIdx2] || ''}
                                     onChange={(e) => handleUpdateBonRow('AG', agIdx2, e.target.value)}
@@ -8095,7 +8101,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                 <div className="relative flex items-center">
                                   <input
                                     type="text"
-                                    list="bon-casa-as-list"
+                                    list={bonType !== 'livraison' ? "bon-casa-as-list" : undefined}
                                     placeholder="............"
                                     value={bonAsRows[asIdx1] || ''}
                                     onChange={(e) => handleUpdateBonRow('AS', asIdx1, e.target.value)}
@@ -8132,7 +8138,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                                 <div className="relative flex items-center">
                                   <input
                                     type="text"
-                                    list="bon-casa-as-list"
+                                    list={bonType !== 'livraison' ? "bon-casa-as-list" : undefined}
                                     placeholder="............"
                                     value={bonAsRows[asIdx2] || ''}
                                     onChange={(e) => handleUpdateBonRow('AS', asIdx2, e.target.value)}
