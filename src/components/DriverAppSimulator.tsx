@@ -857,7 +857,6 @@ export default function DriverAppSimulator({
                         }`}>
                           {isFridgeDelivered(selectedFridge.id) ? '✓ Livré' : 'À Livrer'}
                         </span>
-                        <p className="text-[9px] text-slate-400 mt-1 font-mono">{selectedFridge.temperature || -20}°C</p>
                       </div>
                     </div>
 
