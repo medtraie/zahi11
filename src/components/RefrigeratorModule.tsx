@@ -2750,61 +2750,88 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
       });
     } else {
       // bonType === 'prise_en_charge' || bonType === 'decharge'
-      const clientFullName = `${bonNomClient} ${bonPrenomClient}`.trim() || bonActiviteClient || 'Client';
-      
-      if (bonCongelateurNo.trim()) {
-        const serial = bonCongelateurNo.trim().toUpperCase();
-        let found = false;
-        setFridges(prev => prev.map(f => {
-          if (f.serialNumber.toLowerCase() === serial.toLowerCase()) {
-            found = true;
-            return {
-              ...f,
-              status: bonType === 'prise_en_charge' ? 'service' : 'stock',
-              client: bonType === 'prise_en_charge' ? clientFullName : ''
-            };
-          }
-          return f;
-        }));
+      // Condition stricte : L'utilisateur doit obligatoirement remplir manuellement l'intégralité du formulaire pour que l'opération soit réussie !
+      const missingFields: string[] = [];
 
-        if (!found && bonType === 'prise_en_charge') {
-          const newF: Refrigerator = {
-            id: `REF-ZH-${bonCongelateurType}-${Math.floor(1000 + Math.random() * 9000)}`,
-            serialNumber: serial,
-            type: bonCongelateurType,
-            status: 'service',
-            client: clientFullName,
-            depot: bonDepot,
-            temperature: (bonCongelateurType === 'AP' || bonCongelateurType === 'AS') ? -18.5 : 4.0,
-            targetTemperature: (bonCongelateurType === 'AP' || bonCongelateurType === 'AS') ? -22.0 : 4.0,
-            humidity: 60,
-            compressorStatus: 'running',
-            lastServiceDate: bonDate,
-            fillLevel: 50,
-            powerConsumption: 180
-          };
-          setFridges(prev => [newF, ...prev]);
-        }
+      if (!bonCongelateurNo.trim()) missingFields.push(lang === 'fr' ? 'N° Congélateur' : 'رقم الثلاجة (N°)');
+      if (!bonCongelateurMarque.trim()) missingFields.push(lang === 'fr' ? 'Congélateur marque' : 'ماركة الثلاجة');
+      if (!bonNomClient.trim()) missingFields.push(lang === 'fr' ? 'Nom du Client' : 'اسم الزبون العائلي');
+      if (!bonPrenomClient.trim()) missingFields.push(lang === 'fr' ? 'Prénom du Client' : 'اسم الزبون الشخصي');
+      if (!bonCinNo.trim()) missingFields.push(lang === 'fr' ? 'CIN N°' : 'رقم بطاقة التعريف (CIN)');
+      if (!bonActiviteClient.trim()) missingFields.push(lang === 'fr' ? 'Activité Client' : 'نشاط الزبون');
+      if (!bonPatenteNo.trim()) missingFields.push(lang === 'fr' ? 'Patente N°' : 'رقم الباتانتا');
+      if (!bonAdresseClient.trim()) missingFields.push(lang === 'fr' ? 'Adresse Client' : 'عنوان الزبون');
+      if (!bonTelephoneNo.trim()) missingFields.push(lang === 'fr' ? 'Téléphone N°' : 'رقم الهاتف');
+      if (!bonObservation.trim()) missingFields.push(lang === 'fr' ? 'Observation' : 'الملاحظة (Observation)');
+      if (!bonSecteur.trim()) missingFields.push(lang === 'fr' ? 'Secteur' : 'القطاع (Secteur)');
+      if (!bonNomVendeur.trim()) missingFields.push(lang === 'fr' ? 'Vendeur' : 'البائع (Vendeur)');
+      if (!bonChefSecteur.trim()) missingFields.push(lang === 'fr' ? 'Chef de Secteur' : 'رئيس القطاع');
 
-        setMovements(prev => [{
-          id: `M-BON-${Math.floor(10000 + Math.random() * 90000)}`,
-          refrigeratorId: serial,
-          serialNumber: serial,
-          type: bonCongelateurType,
-          fromStatus: bonType === 'prise_en_charge' ? 'stock' : 'service',
-          toStatus: bonType === 'prise_en_charge' ? 'service' : 'stock',
-          fromLocation: bonType === 'prise_en_charge' ? `Dépôt ${bonDepot}` : `Client: ${clientFullName}`,
-          toLocation: bonType === 'prise_en_charge' ? `Client: ${clientFullName}` : `Dépôt ${bonDepot}`,
-          driverName: bonNomLivreur || bonNomVendeur || 'Equipe Zahi',
-          date: new Date().toLocaleString(),
-          notes: `${bonType === 'prise_en_charge' ? 'Bon de Prise en Charge' : 'Bon de Décharge'} N° ${bonNo}`
-        }, ...prev]);
+      if (missingFields.length > 0) {
+        playBip(400, 0.25);
+        setBonToast({
+          message: lang === 'fr' 
+            ? `Opération non validée : Veuillez remplir manuellement tous les champs obligatoires (${missingFields.slice(0, 3).join(', ')}${missingFields.length > 3 ? ` et ${missingFields.length - 3} autres` : ''}) pour que l'opération soit réussie !` 
+            : `لم تكتمل العملية : يجب تعبئة الاستمارة كاملة بشكل يدوي (${missingFields.slice(0, 3).join('، ')}${missingFields.length > 3 ? ` و ${missingFields.length - 3} حقول أخرى` : ''}) كشرط لتصبح العملية ناجحة (Opération réussie)!`,
+          type: 'error'
+        });
+        return;
       }
 
+      const clientFullName = `${bonNomClient} ${bonPrenomClient}`.trim() || 'Client';
+      const serial = bonCongelateurNo.trim().toUpperCase();
+      let found = false;
+      setFridges(prev => prev.map(f => {
+        if (f.serialNumber.toLowerCase() === serial.toLowerCase()) {
+          found = true;
+          return {
+            ...f,
+            status: bonType === 'prise_en_charge' ? 'service' : 'stock',
+            client: bonType === 'prise_en_charge' ? clientFullName : ''
+          };
+        }
+        return f;
+      }));
+
+      if (!found && bonType === 'prise_en_charge') {
+        const newF: Refrigerator = {
+          id: `REF-ZH-${bonCongelateurType}-${Math.floor(1000 + Math.random() * 9000)}`,
+          serialNumber: serial,
+          type: bonCongelateurType,
+          status: 'service',
+          client: clientFullName,
+          depot: bonDepot,
+          temperature: (bonCongelateurType === 'AP' || bonCongelateurType === 'AS') ? -18.5 : 4.0,
+          targetTemperature: (bonCongelateurType === 'AP' || bonCongelateurType === 'AS') ? -22.0 : 4.0,
+          humidity: 60,
+          compressorStatus: 'running',
+          lastServiceDate: bonDate,
+          fillLevel: 50,
+          powerConsumption: 180
+        };
+        setFridges(prev => [newF, ...prev]);
+      }
+
+      newMvts.push({
+        id: `M-BON-${Math.floor(10000 + Math.random() * 90000)}`,
+        refrigeratorId: serial,
+        serialNumber: serial,
+        type: bonCongelateurType,
+        fromStatus: bonType === 'prise_en_charge' ? 'stock' : 'service',
+        toStatus: bonType === 'prise_en_charge' ? 'service' : 'stock',
+        fromLocation: bonType === 'prise_en_charge' ? `Dépôt ${bonDepot}` : `Client: ${clientFullName}`,
+        toLocation: bonType === 'prise_en_charge' ? `Client: ${clientFullName}` : `Dépôt ${bonDepot}`,
+        driverName: bonNomLivreur || bonNomVendeur || 'Equipe Zahi',
+        date: new Date().toLocaleString(),
+        notes: `${bonType === 'prise_en_charge' ? 'Bon de Prise en Charge' : 'Bon de Décharge'} N° ${bonNo}`
+      });
+
+      setMovements(prev => [...newMvts, ...prev]);
+
       setBonToast({
-        message: bonType === 'prise_en_charge'
-          ? `Bon de Prise en Charge N° ${bonNo} enregistré dans l'application !`
-          : `Bon de Décharge N° ${bonNo} enregistré dans l'application !`,
+        message: lang === 'fr'
+          ? `Opération réussie ! ${bonType === 'prise_en_charge' ? 'Bon de Prise en Charge' : 'Bon de Décharge'} N° ${bonNo} validé et enregistré dans l'application.`
+          : `Opération réussie ! تم التحقق من تعبئة الاستمارة كاملة يدوياً وتسجيل ${bonType === 'prise_en_charge' ? 'سند الاستلام' : 'سند الإخلاء'} رقم ${bonNo} بنجاح.`,
         type: 'success'
       });
     }
@@ -3087,144 +3114,6 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
       [role]: prev[role] ? '' : name
     }));
     playBip(1100, 0.05);
-  };
-
-  // Complete auto-fill for BON DE PRISE EN CHARGE & BON DE DÉCHARGE
-  const fillCompleteBon = (targetSerial?: string) => {
-    // 1. Get fridges belonging to the currently selected depot
-    const depotFridges = fridges.filter(f => isFridgeInDepot(f, bonDepot));
-    
-    // 2. Select target fridge
-    const targetFridge = (targetSerial && (depotFridges.find(f => f.serialNumber === targetSerial) || fridges.find(f => f.serialNumber === targetSerial)))
-      || (bonCongelateurNo && (depotFridges.find(f => f.serialNumber === bonCongelateurNo) || fridges.find(f => f.serialNumber === bonCongelateurNo)))
-      || depotFridges[0]
-      || fridges.find(f => isFridgeInDepot(f, bonDepot))
-      || fridges[0];
-
-    const serial = targetFridge?.serialNumber || targetSerial || bonCongelateurNo || 'ZAHI-CF-751710';
-    setBonCongelateurNo(serial);
-
-    // 3. Determine Congélateur Type (AP / AG / AS)
-    let foundType: 'AP' | 'AG' | 'AS' = 'AP';
-    const upperSerial = serial.toUpperCase();
-    if (targetFridge?.type === 'AS' || upperSerial.includes('AS')) {
-      foundType = 'AS';
-    } else if (targetFridge?.type === 'upright' || targetFridge?.type === 'AG' || upperSerial.includes('VD') || upperSerial.includes('AG')) {
-      foundType = 'AG';
-    } else if (targetFridge?.type === 'chest' || targetFridge?.type === 'AP' || upperSerial.includes('CF') || upperSerial.includes('AP')) {
-      foundType = 'AP';
-    }
-    setBonCongelateurType(foundType);
-    setBonCongelateurMarque('Zahi Glaces');
-
-    // 4. Look up client records in listing if available
-    let listingRecord: any = null;
-    try {
-      const savedListingStr = localStorage.getItem('zahi_refrigerator_listing');
-      if (savedListingStr) {
-        const listing = JSON.parse(savedListingStr);
-        listingRecord = listing.find((r: any) => r.conge && r.conge.toUpperCase() === upperSerial);
-      }
-    } catch (err) {}
-
-    // 5. Client Information
-    if (listingRecord) {
-      const nameParts = (listingRecord.clientName || '').trim().split(' ');
-      if (nameParts.length >= 2) {
-        setBonNomClient(nameParts[0]);
-        setBonPrenomClient(nameParts.slice(1).join(' '));
-      } else {
-        setBonNomClient(listingRecord.clientName || 'AL-AMRI');
-        setBonPrenomClient('');
-      }
-      setBonAdresseClient(listingRecord.adresse || targetFridge?.gps?.address || `Centre-ville, ${bonDepot}`);
-      setBonTelephoneNo(listingRecord.telephone || '06 61 45 78 90');
-      setBonCinNo(listingRecord.cin || 'BK654321');
-      setBonActiviteClient(listingRecord.activite || 'Alimentation Générale & Produits Laitiers');
-      setBonPatenteNo(listingRecord.patente || '45892100');
-    } else if (targetFridge?.client) {
-      const clientStr = targetFridge.client;
-      if (clientStr.toLowerCase().includes('gare') || clientStr.toLowerCase().includes('café')) {
-        setBonNomClient('BENANI');
-        setBonPrenomClient('Rachid');
-        setBonActiviteClient('Café / Salon de Thé & Glacier');
-        setBonCinNo('BK782910');
-        setBonPatenteNo('38291044');
-      } else if (clientStr.toLowerCase().includes('amri')) {
-        setBonNomClient('AL-AMRI');
-        setBonPrenomClient('Mohammed');
-        setBonActiviteClient('Supermarché & Alimentation Générale');
-        setBonCinNo('WA456123');
-        setBonPatenteNo('45892100');
-      } else if (clientStr.toLowerCase().includes('chaouia')) {
-        setBonNomClient('CHAOUIA');
-        setBonPrenomClient('Hassan');
-        setBonActiviteClient('Épicerie Fine & Produits Laitiers');
-        setBonCinNo('BK901245');
-        setBonPatenteNo('51294012');
-      } else if (clientStr.toLowerCase().includes('sahra')) {
-        setBonNomClient('SAHRAOUI');
-        setBonPrenomClient('Brahim');
-        setBonActiviteClient('Magasin & Produits Surgelés');
-        setBonCinNo('SH345678');
-        setBonPatenteNo('62341908');
-      } else {
-        const parts = clientStr.split(' ');
-        setBonNomClient(parts[0] || 'EL MANSOURI');
-        setBonPrenomClient(parts.slice(1).join(' ') || 'Karim');
-        setBonActiviteClient('Alimentation Générale & Glacier');
-        setBonCinNo('MC504702');
-        setBonPatenteNo('45892100');
-      }
-      setBonAdresseClient(targetFridge.gps?.address || `Centre-ville, ${bonDepot}`);
-      setBonTelephoneNo('06 61 45 78 90');
-    } else {
-      // Default realistic Moroccan client matching depot
-      setBonNomClient('EL MANSOURI');
-      setBonPrenomClient('Karim');
-      setBonActiviteClient('Alimentation Générale & Glacier');
-      setBonPatenteNo('45892100');
-      setBonCinNo('BK654321');
-      setBonAdresseClient(targetFridge?.gps?.address || `Boulevard Mohammed V, ${bonDepot}`);
-      setBonTelephoneNo('06 61 45 78 90');
-    }
-
-    // 6. Metadata: Date, Heure, Secteur, Vendeur, Chef Secteur, N° d'ordre
-    if (!bonDate) setBonDate(new Date().toISOString().split('T')[0]);
-    setBonHeure('14:30');
-    setBonNumOrdre(`00${Math.floor(12 + Math.random() * 80)}/2026`);
-    setBonSecteur(`Dépôt ${bonDepot} / ${targetFridge?.gps?.city || bonDepot}`);
-    
-    const driver = targetFridge?.driverName || (bonDepot === 'Berrechid' ? 'Hamza Ch.' : getDrivers()[0]?.name.split(' (')[0] || 'Hamza Ch.');
-    setBonNomVendeur(driver);
-    setBonNomLivreur(driver);
-    setBonChefSecteur(bonDepot === 'Berrechid' ? 'Mehdi K.' : 'Mustapha Ait Ben Haddou');
-
-    // 7. Observation
-    if (bonType === 'prise_en_charge') {
-      setBonObservation('Mise à disposition du matériel frigorifique en parfait état de fonctionnement - Froid conforme (-18°C) - Câble et accessoires complets.');
-    } else {
-      setBonObservation('Restitution du matériel frigorifique pour fin de contrat - État général propre et fonctionnel - Accessoires et clés remis conformes.');
-    }
-
-    // 8. Signatures
-    setVisasSigned({
-      vendeur: driver,
-      client: `${listingRecord?.clientName || targetFridge?.client || 'Client Zahi'} ✓`,
-      livreur: driver,
-      responsable: 'Direction Zahi Glaces',
-      chef: bonDepot === 'Berrechid' ? 'Mehdi K.' : 'Mustapha Ait Ben Haddou',
-      frigoriste: 'Youssef El-Frig',
-      controle: 'Agent Qualité'
-    });
-
-    playBip(1100, 0.08);
-    setBonToast({
-      message: lang === 'fr' 
-        ? `Formulaire ${bonType === 'prise_en_charge' ? 'Prise en Charge' : 'Décharge'} entièrement rempli pour le congélateur ${serial} (Dépôt ${bonDepot}) !`
-        : `تمت تعبئة استمارة ${bonType === 'prise_en_charge' ? 'سند الاستلام' : 'سند الإخلاء'} بالكامل للثلاجة ${serial} (مستودع ${bonDepot}) بنجاح!`,
-      type: 'success'
-    });
   };
 
   // Toggle Thermostat status
@@ -7512,20 +7401,8 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
 
                   {/* CENTER BANNER TITLE & RED SERIAL STAMP */}
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 my-2">
-                    <div className="flex items-center gap-2">
-                      <div className="px-6 py-2 border-2 border-slate-900 rounded-full bg-slate-50 text-center font-black text-sm sm:text-base uppercase tracking-wider shadow-sm">
-                        {bonType === 'prise_en_charge' ? "BON DE PRISE EN CHARGE" : "BON DE DÉCHARGE"}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => fillCompleteBon()}
-                        className="no-print px-3 py-1.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs rounded-full shadow transition-all flex items-center gap-1.5 cursor-pointer border border-amber-600"
-                        title={lang === 'fr' ? "Remplir automatiquement tout le formulaire avec les données du Dépôt sélectionné" : "تعبئة الاستمارة كاملة ببيانات المستودع المختار تلقائياً"}
-                      >
-                        <Zap className="h-3.5 w-3.5 fill-slate-950" />
-                        <span>{lang === 'fr' ? 'Remplir auto' : 'تعبئة الاستمارة كاملة'}</span>
-                      </button>
+                    <div className="px-6 py-2 border-2 border-slate-900 rounded-full bg-slate-50 text-center font-black text-sm sm:text-base uppercase tracking-wider shadow-sm">
+                      {bonType === 'prise_en_charge' ? "BON DE PRISE EN CHARGE" : "BON DE DÉCHARGE"}
                     </div>
 
                     <div className="text-rose-600 font-mono font-black text-lg tracking-widest uppercase flex items-center gap-1">
@@ -7644,7 +7521,20 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                         <select
                           onChange={(e) => {
                             if (!e.target.value) return;
-                            fillCompleteBon(e.target.value);
+                            const val = e.target.value;
+                            setBonCongelateurNo(val);
+                            playBip(800, 0.04);
+                            
+                            // Adjust AP / AG / AS toggle according to selected fridge without touching other form fields
+                            const upper = val.toUpperCase();
+                            const foundF = fridges.find(f => f.serialNumber.toUpperCase() === upper);
+                            if (foundF?.type === 'AS' || upper.includes('AS')) {
+                              setBonCongelateurType('AS');
+                            } else if (foundF?.type === 'upright' || foundF?.type === 'AG' || upper.includes('VD') || upper.includes('AG')) {
+                              setBonCongelateurType('AG');
+                            } else {
+                              setBonCongelateurType('AP');
+                            }
                           }}
                           className="no-print text-[11px] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-bold shrink-0 cursor-pointer shadow-sm"
                           value={fridges.filter(f => isFridgeInDepot(f, bonDepot)).some(f => f.serialNumber === bonCongelateurNo) ? bonCongelateurNo : ""}
