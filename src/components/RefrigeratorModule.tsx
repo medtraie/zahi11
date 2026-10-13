@@ -567,6 +567,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
           }
 
           // Ensure Tanger has stock fridges available for Bon de Sortie testing & operation
+          // Ensure Tanger has stock fridges available for Bon de Sortie testing & operation
           const hasTangerStock = cleaned.some((f: Refrigerator) => (f.depot || '').toLowerCase().includes('tanger') && f.status === 'stock');
           if (!hasTangerStock) {
             cleaned.push(
@@ -617,6 +618,85 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                 fillLevel: 0,
                 powerConsumption: 135,
                 gps: { lat: 35.7595, lng: -5.8340, city: 'Tanger', address: 'Dépôt Régional Tanger, Zone Industrielle Gzenaya' }
+              }
+            );
+          }
+
+          // Ensure Berrechid has AP, AG, AS fridges with client data & stock available
+          const hasBerrechidAP = cleaned.some((f: Refrigerator) => (f.depot || '').toLowerCase().includes('berrechid') && (f.serialNumber || '').includes('751710'));
+          if (!hasBerrechidAP) {
+            cleaned.push(
+              {
+                id: 'REF-ZH-7517-AP',
+                serialNumber: 'ZAHI-CF-751710',
+                type: 'AP',
+                status: 'service',
+                depot: 'Berrechid',
+                client: 'Supermarché Al-Amri Berrechid',
+                temperature: -19.6,
+                targetTemperature: -22.0,
+                humidity: 58,
+                compressorStatus: 'running',
+                lastServiceDate: '2026-06-15',
+                installationDate: '2025-08-01',
+                fillLevel: 80,
+                powerConsumption: 125,
+                driverId: 'DRV-001',
+                driverName: 'Hamza Ch.',
+                gps: { lat: 33.2655, lng: -7.5875, city: 'Berrechid', address: 'Boulevard Mohammed V, N° 45, Berrechid' }
+              },
+              {
+                id: 'REF-ZH-7518-AS',
+                serialNumber: 'ZAHI-AS-751820',
+                type: 'AS',
+                status: 'service',
+                depot: 'Berrechid',
+                client: 'Épicerie Chaouia Berrechid',
+                temperature: -18.2,
+                targetTemperature: -20.0,
+                humidity: 54,
+                compressorStatus: 'running',
+                lastServiceDate: '2026-06-18',
+                installationDate: '2025-09-10',
+                fillLevel: 75,
+                powerConsumption: 135,
+                driverId: 'DRV-001',
+                driverName: 'Hamza Ch.',
+                gps: { lat: 33.2655, lng: -7.5875, city: 'Berrechid', address: 'Hay Al Qods, Rue 12, Berrechid' }
+              },
+              {
+                id: 'REF-ZH-7519-STK',
+                serialNumber: 'ZAHI-CF-751930',
+                type: 'AP',
+                status: 'stock',
+                depot: 'Berrechid',
+                temperature: -19.0,
+                targetTemperature: -22.0,
+                humidity: 50,
+                compressorStatus: 'running',
+                lastServiceDate: '2026-07-01',
+                installationDate: '2025-10-01',
+                fillLevel: 0,
+                powerConsumption: 120,
+                driverName: 'Hamza Ch.',
+                gps: { lat: 33.2655, lng: -7.5875, city: 'Berrechid', address: 'Dépôt Régional Zahi, Zone Industrielle, Berrechid' }
+              },
+              {
+                id: 'REF-ZH-7520-STK',
+                serialNumber: 'ZAHI-AS-751950',
+                type: 'AS',
+                status: 'stock',
+                depot: 'Berrechid',
+                temperature: -18.5,
+                targetTemperature: -20.0,
+                humidity: 50,
+                compressorStatus: 'running',
+                lastServiceDate: '2026-07-01',
+                installationDate: '2025-10-01',
+                fillLevel: 0,
+                powerConsumption: 135,
+                driverName: 'Hamza Ch.',
+                gps: { lat: 33.2655, lng: -7.5875, city: 'Berrechid', address: 'Dépôt Régional Zahi, Zone Industrielle, Berrechid' }
               }
             );
           }
@@ -1084,12 +1164,95 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
         fillLevel: 60,
         powerConsumption: 235,
         driverId: 'DRV-001',
+        driverName: 'Hamza Ch.',
         deliveryDaysCount: 52,
         totalQuantityDeliveredLiters: 2080,
         totalCartonsDelivered: 520,
         lastDeliveryDate: '2026-07-19',
         estimatedRevenueDH: 45760,
         gps: { lat: 33.2655, lng: -7.5875, city: 'Berrechid', address: 'Café de la Gare, Place Hassan II, Berrechid' }
+      },
+      {
+        id: 'REF-ZH-7517',
+        serialNumber: 'ZAHI-CF-751710',
+        type: 'AP',
+        status: 'service',
+        depot: 'Berrechid',
+        client: 'Supermarché Al-Amri Berrechid',
+        temperature: -19.6,
+        targetTemperature: -22.0,
+        humidity: 58,
+        compressorStatus: 'running',
+        lastServiceDate: '2026-06-15',
+        installationDate: '2025-08-01',
+        fillLevel: 80,
+        powerConsumption: 125,
+        driverId: 'DRV-001',
+        driverName: 'Hamza Ch.',
+        deliveryDaysCount: 65,
+        totalQuantityDeliveredLiters: 2600,
+        totalCartonsDelivered: 650,
+        lastDeliveryDate: '2026-07-21',
+        estimatedRevenueDH: 57200,
+        gps: { lat: 33.2655, lng: -7.5875, city: 'Berrechid', address: 'Boulevard Mohammed V, N° 45, Berrechid' }
+      },
+      {
+        id: 'REF-ZH-7518',
+        serialNumber: 'ZAHI-AS-751820',
+        type: 'AS',
+        status: 'service',
+        depot: 'Berrechid',
+        client: 'Épicerie Chaouia Berrechid',
+        temperature: -18.2,
+        targetTemperature: -20.0,
+        humidity: 54,
+        compressorStatus: 'running',
+        lastServiceDate: '2026-06-18',
+        installationDate: '2025-09-10',
+        fillLevel: 75,
+        powerConsumption: 135,
+        driverId: 'DRV-001',
+        driverName: 'Hamza Ch.',
+        deliveryDaysCount: 48,
+        totalQuantityDeliveredLiters: 1920,
+        totalCartonsDelivered: 480,
+        lastDeliveryDate: '2026-07-20',
+        estimatedRevenueDH: 42240,
+        gps: { lat: 33.2655, lng: -7.5875, city: 'Berrechid', address: 'Hay Al Qods, Rue 12, Berrechid' }
+      },
+      {
+        id: 'REF-ZH-7519',
+        serialNumber: 'ZAHI-CF-751930',
+        type: 'AP',
+        status: 'stock',
+        depot: 'Berrechid',
+        temperature: -19.0,
+        targetTemperature: -22.0,
+        humidity: 50,
+        compressorStatus: 'running',
+        lastServiceDate: '2026-07-01',
+        installationDate: '2025-10-01',
+        fillLevel: 0,
+        powerConsumption: 120,
+        driverName: 'Hamza Ch.',
+        gps: { lat: 33.2655, lng: -7.5875, city: 'Berrechid', address: 'Dépôt Régional Zahi, Zone Industrielle, Berrechid' }
+      },
+      {
+        id: 'REF-ZH-7520',
+        serialNumber: 'ZAHI-AS-751950',
+        type: 'AS',
+        status: 'stock',
+        depot: 'Berrechid',
+        temperature: -18.5,
+        targetTemperature: -20.0,
+        humidity: 50,
+        compressorStatus: 'running',
+        lastServiceDate: '2026-07-01',
+        installationDate: '2025-10-01',
+        fillLevel: 0,
+        powerConsumption: 135,
+        driverName: 'Hamza Ch.',
+        gps: { lat: 33.2655, lng: -7.5875, city: 'Berrechid', address: 'Dépôt Régional Zahi, Zone Industrielle, Berrechid' }
       },
       {
         id: 'REF-ZH-7515',
@@ -2924,6 +3087,144 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
       [role]: prev[role] ? '' : name
     }));
     playBip(1100, 0.05);
+  };
+
+  // Complete auto-fill for BON DE PRISE EN CHARGE & BON DE DÉCHARGE
+  const fillCompleteBon = (targetSerial?: string) => {
+    // 1. Get fridges belonging to the currently selected depot
+    const depotFridges = fridges.filter(f => isFridgeInDepot(f, bonDepot));
+    
+    // 2. Select target fridge
+    const targetFridge = (targetSerial && (depotFridges.find(f => f.serialNumber === targetSerial) || fridges.find(f => f.serialNumber === targetSerial)))
+      || (bonCongelateurNo && (depotFridges.find(f => f.serialNumber === bonCongelateurNo) || fridges.find(f => f.serialNumber === bonCongelateurNo)))
+      || depotFridges[0]
+      || fridges.find(f => isFridgeInDepot(f, bonDepot))
+      || fridges[0];
+
+    const serial = targetFridge?.serialNumber || targetSerial || bonCongelateurNo || 'ZAHI-CF-751710';
+    setBonCongelateurNo(serial);
+
+    // 3. Determine Congélateur Type (AP / AG / AS)
+    let foundType: 'AP' | 'AG' | 'AS' = 'AP';
+    const upperSerial = serial.toUpperCase();
+    if (targetFridge?.type === 'AS' || upperSerial.includes('AS')) {
+      foundType = 'AS';
+    } else if (targetFridge?.type === 'upright' || targetFridge?.type === 'AG' || upperSerial.includes('VD') || upperSerial.includes('AG')) {
+      foundType = 'AG';
+    } else if (targetFridge?.type === 'chest' || targetFridge?.type === 'AP' || upperSerial.includes('CF') || upperSerial.includes('AP')) {
+      foundType = 'AP';
+    }
+    setBonCongelateurType(foundType);
+    setBonCongelateurMarque('Zahi Glaces');
+
+    // 4. Look up client records in listing if available
+    let listingRecord: any = null;
+    try {
+      const savedListingStr = localStorage.getItem('zahi_refrigerator_listing');
+      if (savedListingStr) {
+        const listing = JSON.parse(savedListingStr);
+        listingRecord = listing.find((r: any) => r.conge && r.conge.toUpperCase() === upperSerial);
+      }
+    } catch (err) {}
+
+    // 5. Client Information
+    if (listingRecord) {
+      const nameParts = (listingRecord.clientName || '').trim().split(' ');
+      if (nameParts.length >= 2) {
+        setBonNomClient(nameParts[0]);
+        setBonPrenomClient(nameParts.slice(1).join(' '));
+      } else {
+        setBonNomClient(listingRecord.clientName || 'AL-AMRI');
+        setBonPrenomClient('');
+      }
+      setBonAdresseClient(listingRecord.adresse || targetFridge?.gps?.address || `Centre-ville, ${bonDepot}`);
+      setBonTelephoneNo(listingRecord.telephone || '06 61 45 78 90');
+      setBonCinNo(listingRecord.cin || 'BK654321');
+      setBonActiviteClient(listingRecord.activite || 'Alimentation Générale & Produits Laitiers');
+      setBonPatenteNo(listingRecord.patente || '45892100');
+    } else if (targetFridge?.client) {
+      const clientStr = targetFridge.client;
+      if (clientStr.toLowerCase().includes('gare') || clientStr.toLowerCase().includes('café')) {
+        setBonNomClient('BENANI');
+        setBonPrenomClient('Rachid');
+        setBonActiviteClient('Café / Salon de Thé & Glacier');
+        setBonCinNo('BK782910');
+        setBonPatenteNo('38291044');
+      } else if (clientStr.toLowerCase().includes('amri')) {
+        setBonNomClient('AL-AMRI');
+        setBonPrenomClient('Mohammed');
+        setBonActiviteClient('Supermarché & Alimentation Générale');
+        setBonCinNo('WA456123');
+        setBonPatenteNo('45892100');
+      } else if (clientStr.toLowerCase().includes('chaouia')) {
+        setBonNomClient('CHAOUIA');
+        setBonPrenomClient('Hassan');
+        setBonActiviteClient('Épicerie Fine & Produits Laitiers');
+        setBonCinNo('BK901245');
+        setBonPatenteNo('51294012');
+      } else if (clientStr.toLowerCase().includes('sahra')) {
+        setBonNomClient('SAHRAOUI');
+        setBonPrenomClient('Brahim');
+        setBonActiviteClient('Magasin & Produits Surgelés');
+        setBonCinNo('SH345678');
+        setBonPatenteNo('62341908');
+      } else {
+        const parts = clientStr.split(' ');
+        setBonNomClient(parts[0] || 'EL MANSOURI');
+        setBonPrenomClient(parts.slice(1).join(' ') || 'Karim');
+        setBonActiviteClient('Alimentation Générale & Glacier');
+        setBonCinNo('MC504702');
+        setBonPatenteNo('45892100');
+      }
+      setBonAdresseClient(targetFridge.gps?.address || `Centre-ville, ${bonDepot}`);
+      setBonTelephoneNo('06 61 45 78 90');
+    } else {
+      // Default realistic Moroccan client matching depot
+      setBonNomClient('EL MANSOURI');
+      setBonPrenomClient('Karim');
+      setBonActiviteClient('Alimentation Générale & Glacier');
+      setBonPatenteNo('45892100');
+      setBonCinNo('BK654321');
+      setBonAdresseClient(targetFridge?.gps?.address || `Boulevard Mohammed V, ${bonDepot}`);
+      setBonTelephoneNo('06 61 45 78 90');
+    }
+
+    // 6. Metadata: Date, Heure, Secteur, Vendeur, Chef Secteur, N° d'ordre
+    if (!bonDate) setBonDate(new Date().toISOString().split('T')[0]);
+    setBonHeure('14:30');
+    setBonNumOrdre(`00${Math.floor(12 + Math.random() * 80)}/2026`);
+    setBonSecteur(`Dépôt ${bonDepot} / ${targetFridge?.gps?.city || bonDepot}`);
+    
+    const driver = targetFridge?.driverName || (bonDepot === 'Berrechid' ? 'Hamza Ch.' : getDrivers()[0]?.name.split(' (')[0] || 'Hamza Ch.');
+    setBonNomVendeur(driver);
+    setBonNomLivreur(driver);
+    setBonChefSecteur(bonDepot === 'Berrechid' ? 'Mehdi K.' : 'Mustapha Ait Ben Haddou');
+
+    // 7. Observation
+    if (bonType === 'prise_en_charge') {
+      setBonObservation('Mise à disposition du matériel frigorifique en parfait état de fonctionnement - Froid conforme (-18°C) - Câble et accessoires complets.');
+    } else {
+      setBonObservation('Restitution du matériel frigorifique pour fin de contrat - État général propre et fonctionnel - Accessoires et clés remis conformes.');
+    }
+
+    // 8. Signatures
+    setVisasSigned({
+      vendeur: driver,
+      client: `${listingRecord?.clientName || targetFridge?.client || 'Client Zahi'} ✓`,
+      livreur: driver,
+      responsable: 'Direction Zahi Glaces',
+      chef: bonDepot === 'Berrechid' ? 'Mehdi K.' : 'Mustapha Ait Ben Haddou',
+      frigoriste: 'Youssef El-Frig',
+      controle: 'Agent Qualité'
+    });
+
+    playBip(1100, 0.08);
+    setBonToast({
+      message: lang === 'fr' 
+        ? `Formulaire ${bonType === 'prise_en_charge' ? 'Prise en Charge' : 'Décharge'} entièrement rempli pour le congélateur ${serial} (Dépôt ${bonDepot}) !`
+        : `تمت تعبئة استمارة ${bonType === 'prise_en_charge' ? 'سند الاستلام' : 'سند الإخلاء'} بالكامل للثلاجة ${serial} (مستودع ${bonDepot}) بنجاح!`,
+      type: 'success'
+    });
   };
 
   // Toggle Thermostat status
@@ -6702,11 +7003,15 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                   <select
                     value={bonDepot}
                     onChange={(e) => {
-                      setBonDepot(e.target.value);
+                      const newDep = e.target.value;
+                      setBonDepot(newDep);
                       // Reset rows when depot changes so only fridges of selected depot appear
                       setBonApRows(Array(10).fill(''));
                       setBonAgRows(Array(10).fill(''));
                       setBonAsRows(Array(10).fill(''));
+                      // Clear single fridge serial for prise_en_charge / decharge / contrat_depot
+                      setBonCongelateurNo('');
+                      setBonSecteur(`Dépôt ${newDep} / Centre`);
                       playBip(750, 0.04);
                     }}
                     className="bg-white dark:bg-slate-900 text-xs font-bold text-indigo-700 dark:text-indigo-300 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
@@ -6902,7 +7207,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                         >
                           <option value="">Stock...</option>
                           {fridges
-                            .filter(f => f.depot && bonDepot && f.depot.toLowerCase() === bonDepot.toLowerCase())
+                            .filter(f => isFridgeInDepot(f, bonDepot))
                             .map(f => (
                               <option key={f.id} value={f.serialNumber}>
                                 {f.serialNumber} ({f.type}) [{f.status === 'stock' ? (lang === 'fr' ? 'Stock' : 'مخزن') : f.status === 'service' ? (lang === 'fr' ? 'Service' : 'خدمة') : (lang === 'fr' ? 'Maintenance' : 'صيانة')}]
@@ -7207,8 +7512,20 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
 
                   {/* CENTER BANNER TITLE & RED SERIAL STAMP */}
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 my-2">
-                    <div className="px-6 py-2 border-2 border-slate-900 rounded-full bg-slate-50 text-center font-black text-sm sm:text-base uppercase tracking-wider shadow-sm">
-                      {bonType === 'prise_en_charge' ? "BON DE PRISE EN CHARGE" : "BON DE DÉCHARGE"}
+                    <div className="flex items-center gap-2">
+                      <div className="px-6 py-2 border-2 border-slate-900 rounded-full bg-slate-50 text-center font-black text-sm sm:text-base uppercase tracking-wider shadow-sm">
+                        {bonType === 'prise_en_charge' ? "BON DE PRISE EN CHARGE" : "BON DE DÉCHARGE"}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => fillCompleteBon()}
+                        className="no-print px-3 py-1.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs rounded-full shadow transition-all flex items-center gap-1.5 cursor-pointer border border-amber-600"
+                        title={lang === 'fr' ? "Remplir automatiquement tout le formulaire avec les données du Dépôt sélectionné" : "تعبئة الاستمارة كاملة ببيانات المستودع المختار تلقائياً"}
+                      >
+                        <Zap className="h-3.5 w-3.5 fill-slate-950" />
+                        <span>{lang === 'fr' ? 'Remplir auto' : 'تعبئة الاستمارة كاملة'}</span>
+                      </button>
                     </div>
 
                     <div className="text-rose-600 font-mono font-black text-lg tracking-widest uppercase flex items-center gap-1">
@@ -7302,7 +7619,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                       />
                     </div>
 
-                    {/* Line 4: Congélateur marque, N°, AP / AG */}
+                    {/* Line 4: Congélateur marque, N°, AP / AG / AS */}
                     <div className="flex flex-col sm:flex-row items-baseline gap-3">
                       <div className="flex items-baseline gap-1.5 flex-1">
                         <span className="shrink-0 text-slate-900">Congélateur marque :</span>
@@ -7327,57 +7644,41 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                         <select
                           onChange={(e) => {
                             if (!e.target.value) return;
-                            setBonCongelateurNo(e.target.value);
-                            playBip(800, 0.04);
-                            
-                            try {
-                              const savedListingStr = localStorage.getItem('zahi_refrigerator_listing');
-                              if (savedListingStr) {
-                                const listing = JSON.parse(savedListingStr);
-                                const foundRec = listing.find((r: any) => r.conge.toUpperCase() === e.target.value.toUpperCase());
-                                if (foundRec) {
-                                  const nameParts = foundRec.clientName.split(' ');
-                                  if (nameParts.length >= 2) {
-                                    setBonNomClient(nameParts[0]);
-                                    setBonPrenomClient(nameParts.slice(1).join(' '));
-                                  } else {
-                                    setBonNomClient(foundRec.clientName);
-                                    setBonPrenomClient('');
-                                  }
-                                  setBonAdresseClient(foundRec.adresse || '');
-                                  setBonTelephoneNo(foundRec.telephone || '');
-                                  setBonCinNo(foundRec.cin || '');
-                                  
-                                  const isAp = foundRec.conge.toUpperCase().includes('AP');
-                                  const isAs = foundRec.conge.toUpperCase().includes('AS');
-                                  if (isAp || isAs) {
-                                    setBonCongelateurType('AP');
-                                  } else {
-                                    setBonCongelateurType('AG');
-                                  }
-                                }
-                              }
-                            } catch (err) {}
+                            fillCompleteBon(e.target.value);
                           }}
-                          className="no-print text-[10px] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-1.5 py-0.5 text-slate-700 font-bold shrink-0 cursor-pointer"
-                          value={getVendeurFridges().includes(bonCongelateurNo) ? bonCongelateurNo : ""}
-                          title={bonNomVendeur ? `Série (${bonNomVendeur})` : "Série"}
+                          className="no-print text-[11px] bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-bold shrink-0 cursor-pointer shadow-sm"
+                          value={fridges.filter(f => isFridgeInDepot(f, bonDepot)).some(f => f.serialNumber === bonCongelateurNo) ? bonCongelateurNo : ""}
+                          title={`Congélateurs du Dépôt ${bonDepot}`}
                         >
-                          <option value="">{bonNomVendeur ? `Série (${bonNomVendeur})...` : "Série..."}</option>
-                          {getVendeurFridges().map(serial => (
-                            <option key={serial} value={serial}>{serial}</option>
-                          ))}
+                          <option value="">
+                            {(() => {
+                              const depotCount = fridges.filter(f => isFridgeInDepot(f, bonDepot)).length;
+                              return depotCount > 0 
+                                ? `-- Séries Dépôt ${bonDepot} (${depotCount}) --` 
+                                : `-- Aucun congélateur à ${bonDepot} --`;
+                            })()}
+                          </option>
+                          {fridges
+                            .filter(f => isFridgeInDepot(f, bonDepot))
+                            .map(f => {
+                              const typeLabel = f.type === 'chest' ? 'AP' : f.type === 'upright' ? 'AG' : (f.type || 'AP');
+                              return (
+                                <option key={f.id || f.serialNumber} value={f.serialNumber}>
+                                  {f.serialNumber} ({typeLabel}) {f.client ? `- ${f.client}` : '(En stock)'}
+                                </option>
+                              );
+                            })}
                         </select>
                       </div>
 
-                      {/* AP / AG CIRCLE TOGGLES */}
-                      <div className="flex items-center gap-4 shrink-0 border border-slate-800 rounded-lg px-3 py-1 bg-slate-50">
+                      {/* AP / AG / AS CIRCLE TOGGLES */}
+                      <div className="flex items-center gap-3 shrink-0 border border-slate-800 rounded-lg px-2.5 py-1 bg-slate-50">
                         <button
                           type="button"
                           onClick={() => { setBonCongelateurType('AP'); playBip(800, 0.05); }}
-                          className="flex items-center gap-1.5 hover:opacity-80"
+                          className="flex items-center gap-1 hover:opacity-80 cursor-pointer"
                         >
-                          <span className="font-bold text-slate-900">AP</span>
+                          <span className="font-bold text-slate-900 text-xs">AP</span>
                           <div className={`w-4 h-4 rounded-full border-2 border-slate-900 flex items-center justify-center ${bonCongelateurType === 'AP' ? 'bg-slate-900' : 'bg-white'}`}>
                             {bonCongelateurType === 'AP' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                           </div>
@@ -7386,11 +7687,22 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
                         <button
                           type="button"
                           onClick={() => { setBonCongelateurType('AG'); playBip(800, 0.05); }}
-                          className="flex items-center gap-1.5 hover:opacity-80"
+                          className="flex items-center gap-1 hover:opacity-80 cursor-pointer"
                         >
-                          <span className="font-bold text-slate-900">AG</span>
+                          <span className="font-bold text-slate-900 text-xs">AG</span>
                           <div className={`w-4 h-4 rounded-full border-2 border-slate-900 flex items-center justify-center ${bonCongelateurType === 'AG' ? 'bg-slate-900' : 'bg-white'}`}>
                             {bonCongelateurType === 'AG' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => { setBonCongelateurType('AS'); playBip(800, 0.05); }}
+                          className="flex items-center gap-1 hover:opacity-80 cursor-pointer"
+                        >
+                          <span className="font-bold text-slate-900 text-xs">AS</span>
+                          <div className={`w-4 h-4 rounded-full border-2 border-slate-900 flex items-center justify-center ${bonCongelateurType === 'AS' ? 'bg-slate-900' : 'bg-white'}`}>
+                            {bonCongelateurType === 'AS' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                           </div>
                         </button>
                       </div>
