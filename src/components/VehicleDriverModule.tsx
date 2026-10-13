@@ -378,67 +378,164 @@ export default function VehicleDriverModule({
   const alertVehiclesCount = vehicles.filter(v => v.currentTemp > -18 || v.status === 'Alerte').length;
 
   // --- Handlers & Enriched Fleet Tracking Simulator Data ---
-  // Generate deterministic realistic tracking telemetry for each vehicle
-  const enrichedVehicles = vehicles.map((v, index) => {
-    const assigned = v.depotAssigned || 'Casablanca';
-    const depotInfo = ZAHI_DEPOTS_METADATA[assigned] || ZAHI_DEPOTS_METADATA['Casablanca'];
+  // Model catalog for realistic simulation
+  const VEHICLE_MODELS = [
+    { model: 'Scania R450 Streamline Frigo', type: 'transport' as const, cap: 1500 },
+    { model: 'Volvo FH16 Globetrotter -25°C', type: 'transport' as const, cap: 1600 },
+    { model: 'Renault Trucks T-High Chéreau', type: 'transport' as const, cap: 1300 },
+    { model: 'Iveco Daily 35S14 Refrigerator', type: 'livraison' as const, cap: 350 },
+    { model: 'Mercedes-Benz Sprinter Froid Positif/Négatif', type: 'livraison' as const, cap: 300 },
+    { model: 'Isuzu Elf N-Series Freezer Box', type: 'livraison' as const, cap: 400 },
+    { model: 'Mitsubishi Fuso Canter Ice Box', type: 'livraison' as const, cap: 450 },
+    { model: 'MAN TGM 18.290 Multi-Température', type: 'transport' as const, cap: 1100 },
+    { model: 'Hyundai HD78 Caisson Isotherme Zahi', type: 'livraison' as const, cap: 320 }
+  ];
 
-    // Define custom telemetry states
-    const isPanne = v.status === 'En maintenance' || v.status === 'Alerte' || v.currentTemp > -18;
-    const isNeverEntered = index === 2 || v.id === 'TRK-EXP-103'; // Vehicle that hasn't entered depot yet
-    const isAbsentLongTime = index === 1 || v.id === 'TRK-EXP-102'; // Vehicle absent for 8+ days
+  const DRIVER_NAMES_POOL = [
+    'Rachid El Amrani', 'Mustapha Ait Ben Haddou', 'Karim Bennani', 'Yassine Belkhadir',
+    'Tarik Jamil', 'Hicham Daoudi', 'Amina Tazi', 'Hamza Mansouri', 'Bilal Chraibi',
+    'Omar El Fassi', 'Youssef Berrada', 'Mohamed Alami', 'Said Naciri', 'Khalid Ouazzani'
+  ];
 
-    // Simulated visits & exits
-    const inVisits = isNeverEntered ? 0 : (24 + (index * 7) % 31);
-    const outExits = isNeverEntered ? 0 : (inVisits + (v.status === 'En transit' || v.status === 'En livraison' ? 1 : 0));
-    const daysAway = isNeverEntered ? 45 : (isAbsentLongTime ? 12 : (v.status === 'Disponible' ? 0 : 3));
-    const lastEntry = isNeverEntered 
-      ? 'Jamais / En transit usine' 
-      : (isAbsentLongTime ? 'Il y a 12 jours (01/10/2026)' : 'Hier 18:45');
+  // Helper to generate a realistic rich pool of 6 to 8 simulated vehicles for ANY depot
+  const getSimulatedVehiclesForDepot = (depotName: string) => {
+    const depotInfo = ZAHI_DEPOTS_METADATA[depotName] || ZAHI_DEPOTS_METADATA['Casablanca'];
+    
+    // Existing vehicles assigned by user in parent state
+    const customAssigned = vehicles.filter(v => v.depotAssigned === depotName);
 
-    // Calculate simulated GPS coordinates near assigned depot or in-transit
-    let lat = depotInfo.lat;
-    let lng = depotInfo.lng;
-    let isNearDepot = false;
+    // Number of vehicles to generate (7 vehicles per depot for a perfect balance between 5 and 9)
+    const targetCount = Math.max(7, customAssigned.length);
+    const resultList: any[] = [...customAssigned];
 
-    if (v.status === 'Disponible' || isPanne) {
-      // Parked directly inside or right at depot yard perimeter (~200m)
-      lat = depotInfo.lat + ((index % 3) - 1) * 0.003;
-      lng = depotInfo.lng + (((index + 1) % 3) - 1) * 0.003;
-      isNearDepot = true;
-    } else if (v.status === 'En livraison') {
-      // In surrounding city area delivery (within 5-15km)
-      lat = depotInfo.lat + (Math.sin(index * 1.5) * 0.045);
-      lng = depotInfo.lng + (Math.cos(index * 1.5) * 0.045);
-      isNearDepot = false;
-    } else {
-      // En transit on highway route
-      lat = depotInfo.lat + (Math.sin(index * 2.2) * 0.18);
-      lng = depotInfo.lng + (Math.cos(index * 2.2) * 0.18);
-      isNearDepot = false;
+    for (let i = customAssigned.length; i < targetCount; i++) {
+      const modelTemplate = VEHICLE_MODELS[i % VEHICLE_MODELS.length];
+      const modelName = modelTemplate.model;
+      const vType = modelTemplate.type;
+      const plate = `${(i + 1) * 11}-${depotName.slice(0, 1).toUpperCase()}-${3420 + i * 17}`;
+      const vId = `TRK-${depotName.slice(0, 3).toUpperCase()}-${String(i + 1).padStart(2, '0')}`;
+      const driverName = DRIVER_NAMES_POOL[(i + depotName.length) % DRIVER_NAMES_POOL.length];
+
+      // Distribute statuses across vehicles to guarantee ALL scenarios are satisfied:
+      // Index 0: Proche du Dépôt (Parked / Ready)
+      // Index 1: Proche du Dépôt (Loading)
+      // Index 2: Jamais Entré (Never Entered - new transfer vehicle from plant)
+      // Index 3: En Panne (Breakdown / Temperature Alert > -18°C)
+      // Index 4: Absent Prolongé (> 5 days away delivering in remote valleys)
+      // Index 5: En livraison locale (< 10km)
+      // Index 6: En transit inter-villes
+      let status: 'Disponible' | 'En transit' | 'En livraison' | 'En maintenance' | 'Alerte' = 'Disponible';
+      let isNearDepot = false;
+      let isPanne = false;
+      let neverEnteredDepot = false;
+      let daysAwayFromDepot = 0;
+      let inDepotVisits = 15 + ((i * 7) % 25);
+      let outDepotExits = inDepotVisits + 1;
+      let temp = -20.5 + ((i % 3) * 0.4);
+      let speedKmh = 0;
+      let lastDepotEntryDate = `Il y a ${i} jours`;
+      let lat = depotInfo.lat;
+      let lng = depotInfo.lng;
+
+      if (i === 0 || i === 1) {
+        // SCENARIO 1 & 2: Proches du Dépôt (< 4.5 km du portail)
+        status = 'Disponible';
+        isNearDepot = true;
+        inDepotVisits = 32 + i * 5;
+        outDepotExits = inDepotVisits;
+        speedKmh = 0;
+        lastDepotEntryDate = 'Aujourd\'hui 07:15';
+        lat = depotInfo.lat + (i === 0 ? 0.0018 : -0.0022);
+        lng = depotInfo.lng + (i === 0 ? -0.0015 : 0.0020);
+      } else if (i === 2) {
+        // SCENARIO 3: Jamais Entré dans le dépôt (En route depuis l'usine)
+        status = 'En transit';
+        neverEnteredDepot = true;
+        inDepotVisits = 0;
+        outDepotExits = 0;
+        daysAwayFromDepot = 38;
+        speedKmh = 72;
+        lastDepotEntryDate = 'Jamais / En transit usine';
+        lat = depotInfo.lat + 0.12;
+        lng = depotInfo.lng - 0.09;
+      } else if (i === 3) {
+        // SCENARIO 4: En Panne (Froid > -18°C ou panne mécanique)
+        status = 'Alerte';
+        isPanne = true;
+        isNearDepot = true; // Often parked in repair bay right next to depot
+        temp = -12.4; // Critical temperature loss
+        inDepotVisits = 18;
+        outDepotExits = 17;
+        speedKmh = 0;
+        lastDepotEntryDate = 'Hier 16:30 (Entrée en atelier)';
+        lat = depotInfo.lat + 0.0035;
+        lng = depotInfo.lng + 0.0012;
+      } else if (i === 4) {
+        // SCENARIO 5: Absent Prolongé (> 5 jours loin du dépôt)
+        status = 'En livraison';
+        daysAwayFromDepot = 9; // > 5 days away
+        inDepotVisits = 12;
+        outDepotExits = 13;
+        speedKmh = 54;
+        lastDepotEntryDate = 'Il y a 9 jours (04/10/2026)';
+        lat = depotInfo.lat + 0.065;
+        lng = depotInfo.lng + 0.075;
+      } else if (i === 5) {
+        // Local Delivery in city outskirts
+        status = 'En livraison';
+        daysAwayFromDepot = 2;
+        inDepotVisits = 26;
+        outDepotExits = 27;
+        speedKmh = 42;
+        lastDepotEntryDate = 'Avant-hier 19:00';
+        lat = depotInfo.lat - 0.038;
+        lng = depotInfo.lng + 0.042;
+      } else {
+        // High-speed intercity transport
+        status = 'En transit';
+        daysAwayFromDepot = 1;
+        inDepotVisits = 22;
+        outDepotExits = 23;
+        speedKmh = 80;
+        lastDepotEntryDate = 'Hier 11:20';
+        lat = depotInfo.lat + 0.082;
+        lng = depotInfo.lng - 0.064;
+      }
+
+      resultList.push({
+        id: vId,
+        type: vType,
+        model: modelName,
+        plateNumber: plate,
+        capacityCartons: modelTemplate.cap,
+        currentTemp: temp,
+        isRefrigerationOn: !isPanne,
+        assignedDriverId: `DRV-SIM-${i}`,
+        fuelLevel: 55 + ((i * 9) % 40),
+        status,
+        depotAssigned: depotName,
+        currentDepotNear: depotName,
+        inDepotVisits,
+        outDepotExits,
+        neverEnteredDepot,
+        daysAwayFromDepot,
+        lastDepotEntryDate,
+        speedKmh,
+        isNearDepot,
+        isPanne,
+        lat,
+        lng,
+        driverName
+      });
     }
 
-    const speed = v.status === 'Disponible' || isPanne ? 0 : (45 + (index * 8) % 40);
+    return resultList;
+  };
 
-    return {
-      ...v,
-      currentDepotNear: assigned,
-      inDepotVisits: v.inDepotVisits ?? inVisits,
-      outDepotExits: v.outDepotExits ?? outExits,
-      neverEnteredDepot: v.neverEnteredDepot ?? isNeverEntered,
-      daysAwayFromDepot: v.daysAwayFromDepot ?? daysAway,
-      lastDepotEntryDate: v.lastDepotEntryDate ?? lastEntry,
-      speedKmh: speed,
-      isNearDepot,
-      isPanne,
-      lat,
-      lng
-    };
-  });
+  // Live vehicles for the currently selected depot
+  const depotVehicles = getSimulatedVehiclesForDepot(selectedDepotFilter);
 
-  // Filter vehicles per selected depot and tracking category
-  const depotVehicles = enrichedVehicles.filter(v => v.depotAssigned === selectedDepotFilter);
-
+  // Filtered vehicles according to the user's selected KPI filter
   const filteredTrackingVehicles = depotVehicles.filter(v => {
     if (trackingFilterCategory === 'near') return v.isNearDepot;
     if (trackingFilterCategory === 'panne') return v.isPanne;
@@ -1332,8 +1429,9 @@ export default function VehicleDriverModule({
             {/* Scrollable list of clickable depot pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
               {Object.entries(ZAHI_DEPOTS_METADATA).map(([dKey, dInfo]) => {
-                const countAssigned = enrichedVehicles.filter(v => v.depotAssigned === dKey).length;
-                const countNear = enrichedVehicles.filter(v => v.depotAssigned === dKey && v.isNearDepot).length;
+                const simulatedList = getSimulatedVehiclesForDepot(dKey);
+                const countAssigned = simulatedList.length;
+                const countNear = simulatedList.filter(v => v.isNearDepot).length;
                 const isSelected = selectedDepotFilter === dKey;
 
                 return (
