@@ -302,7 +302,8 @@ export default function OpenStreetMapGeoloc({
 
     // Filter fridges
     const filtered = fridges.filter(f => {
-      const matchCity = selectedCity === 'all' || f.depot === selectedCity;
+      // In alert mode, ignore city constraint so all alerts nationwide are immediately visible
+      const matchCity = filterStatus === 'alert' || selectedCity === 'all' || f.depot === selectedCity;
       const matchStatus = 
         filterStatus === 'all' 
           ? true 
@@ -331,10 +332,10 @@ export default function OpenStreetMapGeoloc({
 
       // Inland District Mapping to ensure pins never land in Atlantic Ocean!
       const districtList = MOROCCO_CITY_DISTRICTS[depotKey] || MOROCCO_CITY_DISTRICTS['Casablanca'];
-      const district = districtList[countInCity % districtList.length];
+      const district = (districtList && districtList.length > 0) ? districtList[countInCity % districtList.length] : { name: depotKey, lat: 33.5731, lng: -7.5898, address: `${depotKey}, Maroc` };
 
-      let lat = f.gps?.lat ?? district.lat;
-      let lng = f.gps?.lng ?? district.lng;
+      let lat = typeof f.gps?.lat === 'number' && !isNaN(f.gps.lat) ? f.gps.lat : (district?.lat ?? 33.5731);
+      let lng = typeof f.gps?.lng === 'number' && !isNaN(f.gps.lng) ? f.gps.lng : (district?.lng ?? -7.5898);
 
       // Check if coordinates were invalid or in sea (e.g. Casablanca ocean area: lat > 33.58 & lng < -7.63)
       if (depotKey === 'Casablanca' && lat > 33.585 && lng < -7.62) {
@@ -457,7 +458,7 @@ export default function OpenStreetMapGeoloc({
                   <b style="color: #b91c1c;">🚨 ${lang === 'fr' ? "Position actuelle détectée :" : "الموقع الحالي المرصود :"}</b><br/>
                   <span style="font-weight: 700; color: #b91c1c;">${f.gps?.address || district.address}</span>
                   <div style="font-family: monospace; font-size: 8.5px; color: #64748b; margin-top: 2px;">
-                    Coordonnées GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)} (+3.4 km écart)
+                    Coordonnées GPS: ${(typeof lat === 'number' && !isNaN(lat) ? lat.toFixed(4) : '33.5380')}, ${(typeof lng === 'number' && !isNaN(lng) ? lng.toFixed(4) : '-7.6000')} (+3.4 km écart)
                   </div>
                 </div>
               </div>
@@ -513,7 +514,7 @@ export default function OpenStreetMapGeoloc({
     });
 
     // Fly to selected fridge
-    const isNewFridgeSelection = selectedFridgeId !== null && selectedFridgeId !== lastFlownFridgeIdRef.current;
+    const isNewFridgeSelection = selectedFridgeId !== null && (selectedFridgeId !== lastFlownFridgeIdRef.current || filterChanged);
 
     if (selectedFridgeId === null) {
       lastFlownFridgeIdRef.current = null;
@@ -524,20 +525,35 @@ export default function OpenStreetMapGeoloc({
       if (selected) {
         const depotKey = selected.depot || 'Casablanca';
         const districtList = MOROCCO_CITY_DISTRICTS[depotKey] || MOROCCO_CITY_DISTRICTS['Casablanca'];
-        const lat = selected.gps?.lat ?? districtList[0].lat;
-        const lng = selected.gps?.lng ?? districtList[0].lng;
+        const selLat = selected.gps?.lat ?? (districtList && districtList[0] ? districtList[0].lat : 33.5731);
+        const selLng = selected.gps?.lng ?? (districtList && districtList[0] ? districtList[0].lng : -7.5898);
+        const validLat = typeof selLat === 'number' && !isNaN(selLat) ? selLat : 33.5731;
+        const validLng = typeof selLng === 'number' && !isNaN(selLng) ? selLng : -7.5898;
 
         lastFlownFridgeIdRef.current = selectedFridgeId;
 
-        map.flyTo([lat, lng], Math.max(map.getZoom(), 12), { animate: true, duration: 1.0 });
+        const currentZoom = typeof map.getZoom === 'function' && typeof map.getZoom() === 'number' ? map.getZoom() : 6;
+        const targetZoom = Math.min(15, Math.max(currentZoom, 13));
 
-        if (userClosedPopupForIdRef.current !== selectedFridgeId) {
-          markersRef.current[selectedFridgeId].openPopup();
+        try {
+          map.flyTo([validLat, validLng], targetZoom, { animate: true, duration: 0.8 });
+        } catch {
+          map.setView([validLat, validLng], targetZoom);
         }
+
+        setTimeout(() => {
+          if (markersRef.current && markersRef.current[selectedFridgeId]) {
+            markersRef.current[selectedFridgeId].openPopup();
+          }
+        }, 300);
       }
     } else if (cityChanged || filterChanged || searchChanged) {
       if (bounds.length > 0) {
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+        try {
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+        } catch {
+          map.setView([31.7917, -7.0926], 6);
+        }
       } else {
         map.setView([31.7917, -7.0926], 6);
       }
@@ -560,7 +576,7 @@ export default function OpenStreetMapGeoloc({
   const selectedFridge = fridges.find(f => f.id === selectedFridgeId);
 
   const visibleCount = fridges.filter(f => {
-    const matchCity = selectedCity === 'all' || f.depot === selectedCity;
+    const matchCity = filterStatus === 'alert' || selectedCity === 'all' || f.depot === selectedCity;
     const matchStatus = 
       filterStatus === 'all' 
         ? true 
@@ -578,10 +594,17 @@ export default function OpenStreetMapGeoloc({
     <div 
       ref={containerWrapperRef}
       className={`relative w-full rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl transition-all duration-300 ${
-        isFullscreen ? 'fixed inset-0 z-50 h-screen w-screen rounded-none bg-slate-900 p-0 m-0' : 'h-[640px] bg-slate-900'
+        isFullscreen ? 'fixed inset-0 z-50 h-screen w-screen rounded-none bg-slate-100 dark:bg-slate-900 p-0 m-0' : 'h-[640px] bg-slate-100 dark:bg-slate-900'
       }`}
     >
-      <div ref={mapContainerRef} className="w-full h-full z-10 bg-slate-900" />
+      {/* Global Leaflet Custom CSS */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .leaflet-container {
+          background-color: #f1f5f9 !important;
+        }
+      `}} />
+
+      <div ref={mapContainerRef} className="w-full h-full z-10 bg-slate-100 dark:bg-slate-900" />
 
       {/* Empty State Banner if 0 items match */}
       {visibleCount === 0 && (
