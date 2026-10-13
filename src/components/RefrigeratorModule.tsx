@@ -3210,7 +3210,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
               <span className={`text-[10px] mt-1.5 px-2 py-0.5 rounded-full font-mono font-bold ${
                 activeSubTab === 'inventory' ? 'bg-sky-100 text-sky-800' : 'bg-black/20 text-sky-100'
               }`}>
-                {refrigerators.length} {lang === 'fr' ? 'unités' : 'وحدة'}
+                {fridges.length} {lang === 'fr' ? 'unités' : 'وحدة'}
               </span>
             </button>
 
@@ -3282,7 +3282,7 @@ export default function RefrigeratorModule({ state, lang, currentUser, initialSu
               <span className={`text-[10px] mt-1.5 px-2 py-0.5 rounded-full font-mono font-bold ${
                 activeSubTab === 'movements' ? 'bg-sky-100 text-sky-800' : 'bg-black/20 text-sky-100'
               }`}>
-                {stockMovements.length} {lang === 'fr' ? 'mouvements' : 'حركات'}
+                {movements.length} {lang === 'fr' ? 'mouvements' : 'حركات'}
               </span>
             </button>
 
